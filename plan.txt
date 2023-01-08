@@ -1,0 +1,103 @@
+CLASSES:
+Neuron
+Weight
+Bias
+ConvolutionalLayer
+DenseLayer
+PoolingLayer
+LayerAdapter
+NeuralNetwork
+
+GLOBAL FUNCTIONS:
+g:vector<vector<Neuron>> dot_product(vector<vector<Neuron>> input, vector<vector<double>> kernel, int stridex, int stridey)
+g:vector<vector<double>> reverse_dot_product(vector<vector<Neuron>> input, vector<vector<double>> kernel, int stridex, int stridey)
+g:vector<Neuron> flatten(vector<vector<Neuron>>)
+g:vector<Neuron> flatten(vector<vector<vector<Neuron>>>)
+g:vector<vector<vector<Neuron>>> unflatten(vector<Neuron>)
+g:math formulas like ReLU and derivative functions
+
+CLASS DESCRIPTIONS:
+ - Neuron -
+params:
+-double value
+-double cache_value
+-double delta_value
+-int activation
+constructor:
+:int activation
+functions:
++void set_value(double value)
++double get_value()
++void set_cache(double cache_value)
++double get_cache()
++void set_delta(double delta_value)
++double get_delta()
+
+- Weight -
+params:
+-int initialization
+-int input
+-int output
+-double value
+-double alpha
+-double m
+-double v
+constructor:
+:int initialization
+:int input
+:int output
+functions:
++void update(double gradient)
++void set_value(double value)
++double get_value()
+
+- Bias -
+-double value
+-double alpha
+-double m
+-double v
+-bool exists
+constructor:
+:int initialization
+:int input
+:int output
+functions:
++void update(double gradient)
++void set_value(double value)
++double get_value()
++void set_exists(bool exists)
++bool get_exists()
+
+- ConvolutionalLayer -
+-int new_dimensions
+-vector<vector<vector<double>>> data
+-int numberOfKernelsPerChannel
+number of kernels is channels*kernels per channels
+number of kernels per channel also represents the number of new kernels
+-int numberOfChannels 
+-int activation
+-int layerType
+-int kernel_info
+-vector<Bias> biases
+one bias for each kernel in layer
+-vector<vector<vector<double>>> kernels
+constructor:
+:vector<int> dimension
+[x, y, c] x dimension, y dimension and #of channels
+:int kernels
+# of kernels per channel
+:vector<int> kernel_info
+[x, y, stridex, stridey]
+:int layerType
+0=input 1=output 2=hidden
+:int activation
+:int initialization
+:int input
+:vector<int> new_dimensions
+The [x, y, c] dimensions of the postceding layer
+function:
++vector<vector<vector<double>>> forward()
++vector<vector<vector<double>>> backward(vector<vector<vector<double>>> deltas_last_layer)
+-generateKernels(int numberOfKernels, vector<int> kernelInfo)
+
+
