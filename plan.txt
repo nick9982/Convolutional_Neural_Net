@@ -98,6 +98,8 @@ The [x, y, c] dimensions of the postceding layer
 function:
 +vector<vector<vector<double>>> forward()
 +vector<vector<vector<double>>> backward(vector<vector<vector<double>>> deltas_last_layer)
++void updateWeights(vector<vector<vector<int>>> nextLayerDeltas)
 -generateKernels(int numberOfKernels, vector<int> kernelInfo)
 
-
+- DenseLayer -
+-int input
