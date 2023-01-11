@@ -17,7 +17,8 @@ int main (int argc, char *argv[])
     /* print_images(test_data, number_of_images_test, image_size_test); */
 
 
-    NeuralNetwork nn(18, 'a', 2, 3, 4);
+    NeuralNetwork nn(new DenseLayer(4, "ReLU", "Xavier"),
+                     new DenseLayer(3, "ReLU", "Xavier"));
 
     return 0;
 }

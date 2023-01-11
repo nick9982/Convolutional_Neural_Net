@@ -2,6 +2,7 @@
 #include <iostream>
 #include <vector>
 #include <variant>
+#include <string>
 
 using namespace std;
 
@@ -34,6 +35,8 @@ class Neuron
 };
 
 vector<Neuron> translateDoubleVecToNeuronVec(vector<double> vec);
+int stringActivationToIntActivation(string);
+int stringInitializationToIntInitialization(string);
 
 class Bias
 {
@@ -52,9 +55,13 @@ class DenseLayer
     private:
         vector<Neuron> neurons;
         vector<Weight> weights;
-        int in, out, activation, layerType;
+        int in, out, activation, initialization, layerType;
     public:
-        DenseLayer();
+        DenseLayer(int, string, string);
+        void init(); //the reason init is separate from the constructor
+        //is because some varaibles are assigned to this object after the
+        //constructor is called. This way the user will not have to set
+        //redundant parameters.
         vector<double> forward();
         void backward(vector<double> errors);
         void update();
@@ -66,32 +73,36 @@ class ConvolutionLayer
         vector<Neuron> neurons;
     public:
         ConvolutionLayer();
+        void init();
         vector<double> forward();
         void backward();
         void update();
 };
 
+class PoolingLayer
+{
+    private:
+    public:
+        PoolingLayer();
+};
+
 class NeuralNetwork
 {
     public:
-        template<typename T, typename... Args> NeuralNetwork(const T& t, Args... args)
+        template<typename... Args> NeuralNetwork(Args... args)
         {
-            //Because constructor does not allow recursion I use a separate instanciate function
-            //to unpack the packed parameters of the neural network.
-            instanciate(t, args...);
+            const int size = sizeof...(args);
+            /* DenseLayer* params[size] = {args...}; */
+            /* for(int i = 0; i < sizeof params / sizeof params[0]; i++) */
+            /* { */
+            /*     layers.push_back(params[i]); */
+            /* } */
+            initialize();
         }
         vector<double> forward(vector<double>);
         void backward(vector<double>);
         void update();
     private:
-        vector<variant<DenseLayer, ConvolutionLayer>> layers;
-        template<typename T, typename... Args> void instanciate(const T& t, Args... args)
-        {
-            //This is a recursive function which will instanciate the neural network.
-            cout << t << endl;
-            if constexpr (sizeof...(Args) > 0)
-            {
-                instanciate(args...);
-            }
-        }
+        vector<DenseLayer*> layers;
+        void initialize();
 };
