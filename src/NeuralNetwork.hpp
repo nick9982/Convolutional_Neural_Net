@@ -3,6 +3,7 @@
 #include <vector>
 #include <variant>
 #include <string>
+#include <cstdint>
 
 using namespace std;
 
@@ -13,6 +14,7 @@ class Weight
         double value, alpha, m, v;
     public:
         Weight(int, int, int);
+        void init();
         void update(double);
         void set_value(double);
         double get_value();
@@ -22,10 +24,11 @@ class Neuron
 {
     private:
         double value, delta_value, cache_value;
-        int activation;
-        vector<Weight> weights;
+        double (*act_function)(double);
+        double (*act_function_derivative)(double);
     public:
-        Neuron(int, int, int);
+        Neuron(int);
+        void set_value_and_activate(double);
         void set_value(double);
         double get_value();
         void set_cache(double);
@@ -34,7 +37,15 @@ class Neuron
         double get_delta();
 };
 
-vector<Neuron> translateDoubleVecToNeuronVec(vector<double> vec);
+class StorageForNeuronsAndWeights
+{
+    public:
+        vector<vector<Neuron*>> NeuronStore;
+        vector<vector<Weight*>> WeightStore;
+        void createDenseLayer(int, int, int, int);
+};
+
+vector<Neuron*> translateDoubleVecToNeuronVec(vector<double>);
 int stringActivationToIntActivation(string);
 int stringInitializationToIntInitialization(string);
 
@@ -53,28 +64,27 @@ class Bias
 class DenseLayer
 {
     private:
-        vector<Neuron> neurons;
-        vector<Weight> weights;
-        int in, out, activation, initialization, layerType;
+        int in, out, activation, initialization, layerType, idx;
     public:
         DenseLayer(int, string, string);
-        void init(); //the reason init is separate from the constructor
-        //is because some varaibles are assigned to this object after the
-        //constructor is called. This way the user will not have to set
-        //redundant parameters.
-        vector<double> forward();
+        void init(int, int, int);
+        void forward();
         void backward(vector<double> errors);
         void update();
+        vector<Neuron> get_neurons();
+        int getIn();
 };
 
-class ConvolutionLayer
+class ConvolutionalLayer
 {
     private:
-        vector<Neuron> neurons;
+        vector<double> neurons;
+        int x, y, input_channels, kernel_x, kernel_y, stride_x, stride_y, new_kernels, activation, initialization, layerType;
     public:
-        ConvolutionLayer();
+        ConvolutionalLayer(vector<int>, vector<int>, int, string, string);
         void init();
         vector<double> forward();
+        vector<int> getIn();
         void backward();
         void update();
 };
@@ -86,23 +96,38 @@ class PoolingLayer
         PoolingLayer();
 };
 
+class Flatten
+{
+    private:
+    public:
+};
+
+typedef variant<DenseLayer*, ConvolutionalLayer*, PoolingLayer*> Layer;
+
 class NeuralNetwork
 {
     public:
         template<typename... Args> NeuralNetwork(Args... args)
         {
             const int size = sizeof...(args);
-            /* DenseLayer* params[size] = {args...}; */
-            /* for(int i = 0; i < sizeof params / sizeof params[0]; i++) */
-            /* { */
-            /*     layers.push_back(params[i]); */
-            /* } */
+            Layer params[size] = {args...};
+            for(int i = 0; i < sizeof params / sizeof params[0]; i++)
+            {
+                layers.push_back(params[i]);
+            }
             initialize();
         }
         vector<double> forward(vector<double>);
         void backward(vector<double>);
         void update();
     private:
-        vector<DenseLayer*> layers;
+        vector<double> result_buf;
+        void stageNetwork(vector<double>);
+        void createResultBuffer();
+        void stageResults();
+        vector<Layer> layers;
         void initialize();
 };
+
+extern StorageForNeuronsAndWeights globalStore;
+extern int r;

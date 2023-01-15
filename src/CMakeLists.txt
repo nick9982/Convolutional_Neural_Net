@@ -11,4 +11,4 @@ include_directories(
     /usr/include
 )
 
-add_executable(${PROJECT_NAME} NeuralNetwork.hpp mnist_images.hpp NeuralNetwork.cpp mnist_images.cpp main.cpp)
+add_executable(${PROJECT_NAME} mnist_images.hpp nnalgorithms.hpp NeuralNetwork.hpp NeuralNetwork.cpp mnist_images.cpp DenseLayer.cpp ConvolutionalLayer.cpp PoolingLayer.cpp Neuron.cpp Weight.cpp nnalgorithms.cpp StorageForNeuronsAndWeights.cpp main.cpp)
