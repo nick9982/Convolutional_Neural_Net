@@ -7,8 +7,12 @@ Neuron::Neuron(int activation)
     switch(activation) 
     {
         case 0:
-            this->act_function = &ReLU;
-            this->act_function_derivative = &ReLUDerivative;
+            this->act_function = Linear;
+            this->act_function_derivative = LinearDerivative;
+            break;
+        case 1:
+            this->act_function = ReLU;
+            this->act_function_derivative = ReLUDerivative;
             break;
     }
 }
@@ -16,6 +20,11 @@ Neuron::Neuron(int activation)
 void Neuron::set_value(double value)
 {
     this->value = value;
+}
+
+void Neuron::set_cache(double cache)
+{
+    this->cache_value = cache;
 }
 
 double Neuron::get_value()
@@ -27,6 +36,10 @@ double Neuron::get_value()
 void Neuron::set_value_and_activate(double val)
 {
     this->cache_value = val;
-    this->act_function(val);
-    cout << val << endl;
+    this->value = this->act_function(val);
+}
+
+double Neuron::get_derivative()
+{
+    return this->act_function_derivative(this->cache_value);
 }

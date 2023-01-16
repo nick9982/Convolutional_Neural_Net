@@ -1,4 +1,5 @@
 #include "NeuralNetwork.hpp"
+#include <random>
 #include <stdexcept>
 
 int stringActivationToIntActivation(string activation_function)
@@ -10,7 +11,7 @@ int stringActivationToIntActivation(string activation_function)
 
 int stringInitializationToIntInitialization(string initialization)
 {
-    if(initialization == "Zero" || initialization == "") return 0;
+    if(initialization == "Zero" || initialization == "") return -1;
     if(initialization == "Xavier") return 1;
     return 0;
 }
@@ -38,7 +39,6 @@ typedef variant<int, vector<int>> Dimensions;
 
 void NeuralNetwork::initialize()
 {
-    
     for(int i = 0; i < layers.size(); i++)
     {
         Dimensions output_size = 0;
@@ -71,17 +71,15 @@ void NeuralNetwork::initialize()
             {
                 throw runtime_error("The input to a dense layer is not one dimensional");
             }
-            cout << "It is a dense layer" << endl;
         }
         else if(holds_alternative<ConvolutionalLayer*>(layers[i]))
         {
-            cout << "It is a convolutional layer" << endl;
         }
         else
         {
-            cout << "It is a pooling layer" << endl;
         }
     }
+    this->createResultBuffer();
 }
 
 void NeuralNetwork::stageNetwork(vector<double> input)
@@ -89,6 +87,7 @@ void NeuralNetwork::stageNetwork(vector<double> input)
     for(int i = 0; i < input.size(); i++)
     {
         globalStore.NeuronStore[0][i]->set_value(input[i]);
+        globalStore.NeuronStore[0][i]->set_cache(input[i]);
     }
 }
 
@@ -104,14 +103,30 @@ vector<double> NeuralNetwork::forward(vector<double> input)
 {
     this->stageNetwork(input);    
 
-    for(int i = 0; i < this->layers.size(); i++)
+    for(int i = 0; i < this->layers.size()-1; i++)
     {
-        if(holds_alternative<DenseLayer*>(layers[i]))
+        if(holds_alternative<DenseLayer*>(this->layers[i]))
         {
-            get<DenseLayer*>(layers[i])->forward();
+            get<DenseLayer*>(this->layers[i])->forward();
         }
     }
 
     this->stageResults();
     return this->result_buf;
+}
+
+void NeuralNetwork::backward(vector<double> errors)
+{
+    if(holds_alternative<DenseLayer*>(this->layers[this->layers.size()-1]))
+    {
+        get<DenseLayer*>(this->layers[this->layers.size()-1])->firstDeltas(errors);
+    }
+
+    for(int i = this->layers.size()-2; i >= 0; i--)
+    {
+        if(holds_alternative<DenseLayer*>(this->layers[i]))
+        {
+            get<DenseLayer*>(this->layers[i])->backward();
+        }
+    }
 }

@@ -11,7 +11,6 @@ double randomDoubleInRange(double hi, double lo)
 
 double ReLU(double input)
 {
-    cout << "in relu" << endl;
     if(input > 0) return input;
     return 0;
 }
@@ -74,5 +73,3 @@ double LeCunRandom(int input)
     double hi = sqrt(1.0/input);
     return randomDoubleInRange(hi, -hi);
 }
-
-

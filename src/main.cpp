@@ -16,12 +16,13 @@ int main (int argc, char *argv[])
 
     /* print_images(test_data, number_of_images_test, image_size_test); */
 
-    NeuralNetwork nn(new DenseLayer(4, "ReLU", "Xavier"),
-                     new DenseLayer(3, "ReLU", "Xavier"));
+    NeuralNetwork nn(new DenseLayer(4, "Linear", "Xavier"),
+                     new DenseLayer(6, "ReLU", "Xavier"),
+                     new DenseLayer(8, "ReLU", "Xavier"),
+                     new DenseLayer(3, "Linear", ""));
 
-    vector<double> data = {0.2, 0.7, 1.4, -2.3};
+    vector<double> data = {500, 500, 5000, 100};
     vector<double> res = nn.forward(data);
-    cout << "crashes?" << endl;
     for(int i = 0; i < res.size(); i++)
     {
         cout << res[i] << endl;

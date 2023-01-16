@@ -1,9 +1,13 @@
 #include <stdarg.h>
 #include <iostream>
+#include <random>
+#include <type_traits>
 #include <vector>
 #include <variant>
 #include <string>
 #include <cstdint>
+
+#define noop (void)0
 
 using namespace std;
 
@@ -33,8 +37,9 @@ class Neuron
         double get_value();
         void set_cache(double);
         double get_cache();
-        void set_delta();
+        void set_delta(double);
         double get_delta();
+        double get_derivative();
 };
 
 class StorageForNeuronsAndWeights
@@ -48,6 +53,7 @@ class StorageForNeuronsAndWeights
 vector<Neuron*> translateDoubleVecToNeuronVec(vector<double>);
 int stringActivationToIntActivation(string);
 int stringInitializationToIntInitialization(string);
+int randomize();
 
 class Bias
 {
@@ -55,21 +61,24 @@ class Bias
         double value, alpha, m, v;
         bool exists;
     public:
+        Bias(bool);
         void set_value(double);
         double get_value();
         void set_exists(bool);
-        double get_exists();
+        bool get_exists();
 };
 
 class DenseLayer
 {
     private:
         int in, out, activation, initialization, layerType, idx;
+        Bias bias = new Bias(false);
     public:
         DenseLayer(int, string, string);
         void init(int, int, int);
         void forward();
-        void backward(vector<double> errors);
+        void backward();
+        void firstDeltas(vector<double>);
         void update();
         vector<Neuron> get_neurons();
         int getIn();
@@ -109,6 +118,7 @@ class NeuralNetwork
     public:
         template<typename... Args> NeuralNetwork(Args... args)
         {
+            srand(randomize());
             const int size = sizeof...(args);
             Layer params[size] = {args...};
             for(int i = 0; i < sizeof params / sizeof params[0]; i++)
@@ -130,4 +140,3 @@ class NeuralNetwork
 };
 
 extern StorageForNeuronsAndWeights globalStore;
-extern int r;
