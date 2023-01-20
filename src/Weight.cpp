@@ -1,11 +1,15 @@
 #include "NeuralNetwork.hpp"
 #include "nnalgorithms.hpp"
 
+double beta1 = 0.9;
+double beta2 = 0.999;
+
 Weight::Weight(int in, int out, int initialization)
 {
     this->input = in;
     this->output = out;
     this->initialization = initialization;
+    this->alpha = learningRate;
     this->init();
 }
 
@@ -34,6 +38,9 @@ void Weight::init()
         case 6:
             this->value = LeCunRandom(this->input);
             break;
+        case 12:
+            this->value = 0.5;
+            break;
         default:
             this->value = 0;
             break;
@@ -43,4 +50,29 @@ void Weight::init()
 double Weight::get_value()
 {
     return this->value;
+}
+
+void Weight::set_value(double value)
+{
+    this->value = value;
+}
+
+void Weight::update(double gradient)
+{
+    /* cout << optimizer << endl; */
+    switch(optimizer)
+    {
+        case 0:
+            this->value -= learningRate * gradient;
+            break;
+        case 1:
+            this->m = beta1 * this->m + (1 - beta1) * gradient;
+            this->v = beta2 * this->v + (1 - beta2) * pow(gradient, 2);
+    
+            double mhat = this->m / (1-pow(beta1, epoch));
+            double vhat = this->v / (1-pow(beta2, epoch));
+    
+            this->value -= (this->alpha / (sqrt(vhat + 1e-8)) * mhat);
+            break;
+    }
 }

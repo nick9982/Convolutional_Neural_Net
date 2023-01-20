@@ -2,6 +2,10 @@
 #include <random>
 #include <stdexcept>
 
+double learningRate;
+int optimizer;
+int epoch = 1;
+
 int stringActivationToIntActivation(string activation_function)
 {
     if(activation_function == "Linear" || activation_function == "") return 0;
@@ -13,6 +17,21 @@ int stringInitializationToIntInitialization(string initialization)
 {
     if(initialization == "Zero" || initialization == "") return -1;
     if(initialization == "Xavier") return 1;
+    if(initialization == "0.5") return 12;
+    if(initialization == "HeRandom") return 0;
+    return -1;
+}
+
+void NeuralNetwork::setGlobals(int opt, double lr)
+{
+    learningRate = lr;
+    optimizer = opt;
+}
+
+int stringOptimizerToIntOptimizer(string optimizer)
+{
+    if(optimizer == "None") return 0;
+    if(optimizer == "Adam") return 1;
     return 0;
 }
 
@@ -39,6 +58,7 @@ typedef variant<int, vector<int>> Dimensions;
 
 void NeuralNetwork::initialize()
 {
+    seed = this->seed;
     for(int i = 0; i < layers.size(); i++)
     {
         Dimensions output_size = 0;
@@ -122,11 +142,35 @@ void NeuralNetwork::backward(vector<double> errors)
         get<DenseLayer*>(this->layers[this->layers.size()-1])->firstDeltas(errors);
     }
 
-    for(int i = this->layers.size()-2; i >= 0; i--)
+    for(int i = this->layers.size()-2; i > 0; i--)
     {
         if(holds_alternative<DenseLayer*>(this->layers[i]))
         {
             get<DenseLayer*>(this->layers[i])->backward();
         }
     }
+}
+
+void NeuralNetwork::update()
+{
+    for(int i = 0; i < this->layers.size()-1; i++)
+    {
+        if(holds_alternative<DenseLayer*>(this->layers[i]))
+        {
+            get<DenseLayer*>(this->layers[i])->update();
+        }
+    }
+
+    epoch++;
+}
+
+int NeuralNetwork::get_seed()
+{
+    return this->seed;
+}
+
+void NeuralNetwork::set_seed(int seed)
+{
+    this->user_set_seed = true;
+    this->seed = seed;
 }

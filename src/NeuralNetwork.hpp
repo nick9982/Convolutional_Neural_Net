@@ -42,19 +42,6 @@ class Neuron
         double get_derivative();
 };
 
-class StorageForNeuronsAndWeights
-{
-    public:
-        vector<vector<Neuron*>> NeuronStore;
-        vector<vector<Weight*>> WeightStore;
-        void createDenseLayer(int, int, int, int);
-};
-
-vector<Neuron*> translateDoubleVecToNeuronVec(vector<double>);
-int stringActivationToIntActivation(string);
-int stringInitializationToIntInitialization(string);
-int randomize();
-
 class Bias
 {
     private:
@@ -62,19 +49,34 @@ class Bias
         bool exists;
     public:
         Bias(bool);
+        void update(double);
         void set_value(double);
         double get_value();
         void set_exists(bool);
         bool get_exists();
 };
 
+class StorageForNeuronsAndWeights
+{
+    public:
+        vector<vector<Neuron*>> NeuronStore;
+        vector<vector<Weight*>> WeightStore;
+        vector<vector<Bias*>> BiasStore;
+        void createDenseLayer(int, int, int, int, int);
+};
+
+vector<Neuron*> translateDoubleVecToNeuronVec(vector<double>);
+int stringActivationToIntActivation(string);
+int stringInitializationToIntInitialization(string);
+int randomize();
+
 class DenseLayer
 {
     private:
         int in, out, activation, initialization, layerType, idx;
-        Bias bias = new Bias(false);
+        bool hasBias;
     public:
-        DenseLayer(int, string, string);
+        DenseLayer(int, string, string, bool=true);
         void init(int, int, int);
         void forward();
         void backward();
@@ -111,26 +113,70 @@ class Flatten
     public:
 };
 
+int stringOptimizerToIntOptimizer(string);
+
+typedef variant<string, double, int, DenseLayer*, ConvolutionalLayer*, PoolingLayer*> Cover;
 typedef variant<DenseLayer*, ConvolutionalLayer*, PoolingLayer*> Layer;
 
 class NeuralNetwork
 {
     public:
+        //Parameters syntax(string optimizer, double learningRate, ...layers);
         template<typename... Args> NeuralNetwork(Args... args)
         {
-            srand(randomize());
+            this->seed = randomize();
             const int size = sizeof...(args);
-            Layer params[size] = {args...};
+            Cover params[size] = {args...};
+            int optimizer = 0;
+            bool learningRateSet = false;
+            double learningRate = 0.001;
             for(int i = 0; i < sizeof params / sizeof params[0]; i++)
             {
-                layers.push_back(params[i]);
+                if(holds_alternative<string>(params[i]) && i == 0)
+                {
+                    optimizer = stringOptimizerToIntOptimizer(get<string>(params[i]));
+                }
+                else if(holds_alternative<double>(params[i]) && (i == 0 || i == 1) && !learningRateSet)
+                {
+                    learningRate = get<double>(params[i]);
+                }
+                else if(holds_alternative<DenseLayer*>(params[i]))
+                {
+                    Layer layer = get<DenseLayer*>(params[i]);
+                    layers.push_back(layer);
+                }
+                else if(holds_alternative<ConvolutionalLayer*>(params[i]))
+                {
+                    Layer layer = get<ConvolutionalLayer*>(params[i]);
+                    layers.push_back(layer);
+                }
+                else if(holds_alternative<PoolingLayer*>(params[i]))
+                {
+                    Layer layer = get<PoolingLayer*>(params[i]);
+                    layers.push_back(layer);
+                }
+                else if(holds_alternative<int>(params[i]) && i == (sizeof params / sizeof params[0])-1)
+                {
+                    this->seed = get<int>(params[i]);
+                }
+                else
+                {
+                    throw runtime_error("The parameters are not properly set. Format reminder (string optimizer(optional), double learningRate(optional), ...layers, int seed(optional))");
+                }
             }
+            srand(this->seed);
+            setGlobals(optimizer, learningRate);
             initialize();
         }
         vector<double> forward(vector<double>);
         void backward(vector<double>);
         void update();
+        int get_seed();
+        void set_seed(int);
     private:
+        bool user_set_seed = false;
+        int seed;
+        void setGlobals(int, double);
         vector<double> result_buf;
         void stageNetwork(vector<double>);
         void createResultBuffer();
@@ -140,3 +186,9 @@ class NeuralNetwork
 };
 
 extern StorageForNeuronsAndWeights globalStore;
+extern double learningRate;
+extern double beta1;
+extern double beta2;
+extern int epoch;
+extern int optimizer;
+extern int seed;

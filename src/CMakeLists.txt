@@ -12,3 +12,8 @@ include_directories(
 )
 
 add_executable(${PROJECT_NAME} mnist_images.hpp nnalgorithms.hpp NeuralNetwork.hpp NeuralNetwork.cpp mnist_images.cpp DenseLayer.cpp ConvolutionalLayer.cpp PoolingLayer.cpp Neuron.cpp Weight.cpp randomize_seed.cpp nnalgorithms.cpp StorageForNeuronsAndWeights.cpp Bias.cpp main.cpp)
+
+add_subdirectory(DataMining)
+add_subdirectory(Testing)
+
+target_link_libraries(${PROJECT_NAME} process_power_consumption tests)

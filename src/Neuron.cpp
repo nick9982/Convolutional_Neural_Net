@@ -43,3 +43,13 @@ double Neuron::get_derivative()
 {
     return this->act_function_derivative(this->cache_value);
 }
+
+void Neuron::set_delta(double value)
+{
+    this->delta_value = value;
+}
+
+double Neuron::get_delta()
+{
+    return this->delta_value;
+}

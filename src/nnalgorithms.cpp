@@ -34,7 +34,7 @@ double LinearDerivative(double input)
 /*  Initialization functions  */
 double HeRandomInNormal(int input)
 {
-    double hi = sqrt(2/input);
+    double hi = sqrt(2/(double)input);
     return randomDoubleInRange(hi, -hi);
 }
 
@@ -46,7 +46,7 @@ double HeRandomAvgNormal(int input, int output)
 
 double HeRandomInUniform(int input)
 {
-    double hi = sqrt(6/input);
+    double hi = sqrt(6/(double)input);
     return randomDoubleInRange(hi, -hi);
 }
 
