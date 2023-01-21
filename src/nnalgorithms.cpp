@@ -1,10 +1,9 @@
 #include "nnalgorithms.hpp"
 #include "NeuralNetwork.hpp"
 
-double randomDoubleInRange(double hi, double lo)
+double randomDoubleDistribution(double hi)
 {
-    double f = (double)rand() / RAND_MAX;
-    return lo + f * (hi-lo);
+    return (double)rand() / RAND_MAX * (hi*2) - hi;
 }
 
 /*  Activation functions  */
@@ -34,42 +33,35 @@ double LinearDerivative(double input)
 /*  Initialization functions  */
 double HeRandomInNormal(int input)
 {
-    double hi = sqrt(2/(double)input);
-    return randomDoubleInRange(hi, -hi);
+    return randomDoubleDistribution(sqrt(2/(double)input));
 }
 
 double HeRandomAvgNormal(int input, int output)
 {
-    double hi = sqrt(2/((double)(input + output)/2));
-    return randomDoubleInRange(hi, -hi);
+    return randomDoubleDistribution(sqrt(2/((double)(input + output)/2)));
 }
 
 double HeRandomInUniform(int input)
 {
-    double hi = sqrt(6/(double)input);
-    return randomDoubleInRange(hi, -hi);
+    return randomDoubleDistribution(sqrt(6/(double)input));
 }
 
 double HeRandomAvgUniform(int input, int output)
 {
-    double hi = sqrt(6/((double)(input + output)/2));
-    return randomDoubleInRange(hi, -hi);
+    return randomDoubleDistribution(sqrt(6/((double)(input+output)/2)));
 }
 
 double XavierRandomNormal(int input, int output)
 {
-    double hi = sqrt(1/((double)(input+output)/2));
-    return randomDoubleInRange(hi, -hi);
+    return randomDoubleDistribution(sqrt(1/((double)(input+output)/2)));
 }
 
 double XavierRandomUniform(int input, int output)
 {
-    double hi = sqrt(3/((double)(input+output)/2));
-    return randomDoubleInRange(hi, -hi);
+    return randomDoubleDistribution(sqrt(3/((double)(input+output)/2)));
 }
 
 double LeCunRandom(int input)
 {
-    double hi = sqrt(1.0/input);
-    return randomDoubleInRange(hi, -hi);
+    return randomDoubleDistribution(sqrt(1.0/input));
 }

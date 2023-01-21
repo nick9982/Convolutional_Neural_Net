@@ -59,7 +59,6 @@ void Weight::set_value(double value)
 
 void Weight::update(double gradient)
 {
-    /* cout << optimizer << endl; */
     switch(optimizer)
     {
         case 0:
