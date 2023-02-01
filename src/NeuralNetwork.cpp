@@ -61,15 +61,13 @@ void NeuralNetwork::createResultBuffer()
         this->result_buf = vector<double>(outputNodes, 0);
     }
 }
-typedef variant<int, vector<int>> Dimensions;
 
 void NeuralNetwork::initialize()
 {
     seed = this->seed;
     for(int i = 0; i < layers.size(); i++)
     {
-        Dimensions output_size = 0;
-        int act_function = 0;
+        int output_size = 0, act_function = 0;
         if(i != layers.size()-1)
         {
             if(holds_alternative<DenseLayer*>(layers[i+1]))
@@ -79,8 +77,8 @@ void NeuralNetwork::initialize()
             }
             else if(holds_alternative<ConvolutionalLayer*>(layers[i+1]))
             {
-                //this condition not needed likely
-                /* output_size = get<ConvolutionalLayer*>(layers[i+1])->getIn(); */
+                output_size = get<ConvolutionalLayer*>(layers[i+1])->getIn();
+                act_function = get<ConvolutionalLayer*>(layers[i+1])->getAct();
             }
             else
             {
@@ -93,18 +91,11 @@ void NeuralNetwork::initialize()
         if(holds_alternative<DenseLayer*>(layers[i]))
         {
             //info needed: output, layerType, next layer neurons
-            if(holds_alternative<int>(output_size))
-            {
-                get<DenseLayer*>(layers[i])->init(get<int>(output_size), layerType, i, act_function);
-            }
-            else
-            {
-                throw runtime_error("There is no point in dense layer feeding into conv layer");
-            }
+            get<DenseLayer*>(layers[i])->init(output_size, layerType, i, act_function);
         }
         else if(holds_alternative<ConvolutionalLayer*>(layers[i]))
         {
-            /* get<ConvolutionalLayer*>(layers[i])->init(layerType, i); */
+            get<ConvolutionalLayer*>(layers[i])->init(layerType, i, act_function);
         }
         else
         {

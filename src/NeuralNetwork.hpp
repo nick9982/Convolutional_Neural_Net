@@ -66,11 +66,16 @@ class ConvolutionalLayer
 {
     private:
         int x, y, input_channels, kernel_x, kernel_y, stride_x, stride_y, new_kernels, activation, initialization, layerType, idx, padding_x, padding_y, out_per_wt_x, out_per_wt_y;
+        bool hasBias;
+        double (*act_function)(double);
+        double (*act_function_derivative)(double);
     public:
-        ConvolutionalLayer(vector<int>, vector<int>, int, string, string, vector<int> = {0, 0});
-        void init(int, int);
+        ConvolutionalLayer(vector<int>, vector<int>, int, string, string, vector<int> = {0, 0}, bool = true);
+        void init(int, int, int);
+        void init2();
         void forward();
-        vector<int> getIn();
+        int getIn();
+        int getAct();
         void backward();
         void update();
 };

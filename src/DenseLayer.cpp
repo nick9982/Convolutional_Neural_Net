@@ -100,12 +100,12 @@ void DenseLayer::forward()
 
     for(int i = 0; i < this->out; i++)
     {
-        int jdx = -this->out;
+        int jdx = wStart-this->out;
         double sum = 0;
         for(int j = 0; j < this->in; j++)
         {
             jdx += this->out;
-            sum += neuron_value[nStart+j]*weight[wStart+jdx+i];
+            sum += neuron_value[nStart+j]*weight[jdx+i];
         }
         if(this->hasBias) sum+=bias[bStart];
         neuron_value[nStart_next+i] = this->act_function(sum);
@@ -127,7 +127,7 @@ void DenseLayer::backward()
     int nStart = neuron_acc[this->idx];
     int wStart = weight_acc[this->idx];
     int nStart_next = neuron_acc[this->idx+1];
-    int idx = -this->out;
+    int idx = wStart-this->out;
     for(int i = 0; i < this->in; i++)
     {
         idx += this->out;
@@ -135,7 +135,7 @@ void DenseLayer::backward()
         double neuron_derivative = this->act_function_derivative(cache_value[nStart+i]);
         for(int j = 0; j < this->out; j++)
         {
-            sum += weight[wStart + j + idx] * delta_value[nStart_next+j] * neuron_derivative;
+            sum += weight[j + idx] * delta_value[nStart_next+j] * neuron_derivative;
         }
         delta_value[nStart+i] = sum;
     }
@@ -147,7 +147,7 @@ void DenseLayer::update()
     int wStart = weight_acc[this->idx];
     int bStart = bias_acc[this->idx];
     int nStart_next = neuron_acc[this->idx+1];
-    int idx = -this->out;
+    int idx = wStart-this->out;
     double delta_sum = 0;
     for(int i = 0; i < this->in; i++)
     {
@@ -156,7 +156,7 @@ void DenseLayer::update()
         {
             double gradient = neuron_value[nStart+i] * delta_value[nStart_next+j];
             delta_sum += delta_value[nStart_next];
-            int w = wStart+idx+j;
+            int w = idx+j;
             wm[w] = beta1 * wm[w] + (1 - beta1) * gradient;
             wv[w] = beta2 * wv[w] + (1 - beta2) * pow(gradient, 2);
             double mhat = wm[w] / (1-pow(beta1, epoch));

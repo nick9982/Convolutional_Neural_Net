@@ -79,7 +79,7 @@ int main (int argc, char *argv[])
     uchar* test_labels = labelDataset("../src/data/t10k-labels-idx1-ubyte", number_of_labels_test);
     uchar* train_labels = labelDataset("../src/data/train-labels-idx1-ubyte", number_of_labels_train);
 
-    learnPowerConsumption(true, false);
+    learnPowerConsumption(true, true, 399);
 
     return 0;
 }
@@ -113,8 +113,16 @@ void learnPowerConsumption(bool bias, bool isSeed, int seed)
         "Adam",
         0.001,
         new DenseLayer(6, "Linear", "HeRandom"),
-        new DenseLayer(10, "ReLU", "HeRandom", bias),
-        new DenseLayer(5, "ReLU", "HeRandom", bias),
+        new DenseLayer(35, "ReLU", "HeRandom", bias),
+        new DenseLayer(35, "ReLU", "HeRandom", bias),
+        new DenseLayer(35, "ReLU", "HeRandom", bias),
+        new DenseLayer(35, "ReLU", "HeRandom", bias),
+        new DenseLayer(35, "ReLU", "HeRandom", bias),
+        new DenseLayer(35, "ReLU", "HeRandom", bias),
+        new DenseLayer(35, "ReLU", "HeRandom", bias),
+        new DenseLayer(35, "ReLU", "HeRandom", bias),
+        new DenseLayer(35, "ReLU", "HeRandom", bias),
+        new DenseLayer(35, "ReLU", "HeRandom", bias),
         new DenseLayer(3, "Linear", ""),
         seed
     );
