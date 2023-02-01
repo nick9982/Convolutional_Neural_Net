@@ -3,8 +3,25 @@
 #include <stdexcept>
 
 double learningRate;
+double beta1 = 0.9;
+double beta2 = 0.999;
 int optimizer;
 int epoch = 1;
+double *neuron_value;
+double *cache_value;
+double *delta_value;
+double *weight;
+double *wv;
+double *wm;
+double *bias;
+double *bv;
+double *bm;
+int *neurons_per_layer;
+int *weights_per_layer;
+int *biases_per_layer;
+int *neuron_acc;
+int *weight_acc;
+int *bias_acc;
 
 int stringActivationToIntActivation(string activation_function)
 {
@@ -35,16 +52,6 @@ int stringOptimizerToIntOptimizer(string optimizer)
     return 0;
 }
 
-vector<Neuron*> translateDoubleVecToNeuronVec(vector<double> vec)
-{
-    vector<Neuron*> result;
-    for(int i = 0; i < vec.size(); i++)
-    {
-        result.push_back(new Neuron(0));
-        result[i]->set_value(vec[i]);
-    }
-    return result;
-}
 
 void NeuralNetwork::createResultBuffer()
 {
@@ -62,15 +69,18 @@ void NeuralNetwork::initialize()
     for(int i = 0; i < layers.size(); i++)
     {
         Dimensions output_size = 0;
+        int act_function = 0;
         if(i != layers.size()-1)
         {
             if(holds_alternative<DenseLayer*>(layers[i+1]))
             {
                 output_size = get<DenseLayer*>(layers[i+1])->getIn();
+                act_function = get<DenseLayer*>(layers[i+1])->getAct();
             }
             else if(holds_alternative<ConvolutionalLayer*>(layers[i+1]))
             {
-                output_size = get<ConvolutionalLayer*>(layers[i+1])->getIn();
+                //this condition not needed likely
+                /* output_size = get<ConvolutionalLayer*>(layers[i+1])->getIn(); */
             }
             else
             {
@@ -85,37 +95,71 @@ void NeuralNetwork::initialize()
             //info needed: output, layerType, next layer neurons
             if(holds_alternative<int>(output_size))
             {
-                get<DenseLayer*>(layers[i])->init(get<int>(output_size), layerType, i);
+                get<DenseLayer*>(layers[i])->init(get<int>(output_size), layerType, i, act_function);
             }
             else
             {
-                throw runtime_error("The input to a dense layer is not one dimensional");
+                throw runtime_error("There is no point in dense layer feeding into conv layer");
             }
         }
         else if(holds_alternative<ConvolutionalLayer*>(layers[i]))
         {
+            /* get<ConvolutionalLayer*>(layers[i])->init(layerType, i); */
         }
         else
         {
         }
     }
+    int total_neurons = 0;
+    int total_weights = 0;
+    int total_biases = 0;
+    for(int i = 0; i < this->layers.size(); i++)
+    {
+        total_neurons += neurons_per_layer[i];
+        total_weights += weights_per_layer[i];
+        total_biases += biases_per_layer[i];
+    }
+    /* cout << "nm of neurs: " << total_neurons << endl; */
+    neuron_value = new double[total_neurons];
+    cache_value = new double[total_neurons];
+    delta_value = new double[total_neurons];
+
+    weight = new double[total_weights];
+    wv = new double[total_weights];
+    wm = new double[total_weights];
+
+    bias = new double[total_biases];
+    bv = new double[total_biases];
+    bm = new double[total_biases];
+    this->final_pass();
     this->createResultBuffer();
+}
+
+void NeuralNetwork::final_pass()
+{
+    for(int i = 0; i < this->layers.size(); i++)
+    {
+        if(holds_alternative<DenseLayer*>(this->layers[i]))
+        {
+            get<DenseLayer*>(this->layers[i])->init2();
+        }
+    }
 }
 
 void NeuralNetwork::stageNetwork(vector<double> input)
 {
     for(int i = 0; i < input.size(); i++)
     {
-        globalStore.NeuronStore[0][i]->set_value(input[i]);
-        globalStore.NeuronStore[0][i]->set_cache(input[i]);
+        neuron_value[i] = input[i];
     }
 }
 
 void NeuralNetwork::stageResults()
 {
+    int nStart = neuron_acc[this->layers.size()-1];
     for(int i = 0; i < this->result_buf.size(); i++)
     {
-        this->result_buf[i] = globalStore.NeuronStore[globalStore.NeuronStore.size()-1][i]->get_value();
+        this->result_buf[i] = neuron_value[nStart+i];
     }
 }
 
@@ -128,6 +172,10 @@ vector<double> NeuralNetwork::forward(vector<double> input)
         if(holds_alternative<DenseLayer*>(this->layers[i]))
         {
             get<DenseLayer*>(this->layers[i])->forward();
+        }
+        if(holds_alternative<ConvolutionalLayer*>(this->layers[i]))
+        {
+            get<ConvolutionalLayer*>(this->layers[i])->forward();
         }
     }
 

@@ -6,66 +6,39 @@
 #include <variant>
 #include <string>
 #include <cstdint>
+#include <unordered_map>
 
 #define noop (void)0
 
 using namespace std;
+extern double *neuron_value;
+extern double *cache_value;
+extern double *delta_value;
+extern double *weight;
+extern double *wv;
+extern double *wm;
+extern double *bias;
+extern double *bv;
+extern double *bm;
+extern int *neurons_per_layer;
+extern int *weights_per_layer;
+extern int *biases_per_layer;
+extern int *neuron_acc;
+extern int *weight_acc;
+extern int *bias_acc;
 
-class Weight
+class Initializer
 {
+    public:
+        Initializer(int, int, int);
+        double init();
     private:
-        int initialization, input, output;
-        double value, alpha, m, v;
-    public:
-        Weight(int, int, int);
-        void init();
-        void update(double);
-        void set_value(double);
-        double get_value();
+        int init_formula, in, out;
 };
 
-class Neuron
-{
-    private:
-        double value, delta_value, cache_value;
-        double (*act_function)(double);
-        double (*act_function_derivative)(double);
-    public:
-        Neuron(int);
-        void set_value_and_activate(double);
-        void set_value(double);
-        double get_value();
-        void set_cache(double);
-        double get_cache();
-        void set_delta(double);
-        double get_delta();
-        double get_derivative();
-};
 
-class Bias
-{
-    private:
-        double value, alpha, m, v;
-        bool exists;
-    public:
-        Bias(bool);
-        void update(double);
-        void set_value(double);
-        double get_value();
-        void set_exists(bool);
-        bool get_exists();
-};
 
-class StorageForNeuronsAndWeights
-{
-    public:
-        vector<vector<Neuron*>> NeuronStore;
-        vector<vector<Weight*>> WeightStore;
-        vector<vector<Bias*>> BiasStore;
-        void createDenseLayer(int, int, int, int, int);
-};
 
-vector<Neuron*> translateDoubleVecToNeuronVec(vector<double>);
 int stringActivationToIntActivation(string);
 int stringInitializationToIntInitialization(string);
 int randomize();
@@ -73,28 +46,30 @@ int randomize();
 class DenseLayer
 {
     private:
-        int in, out, activation, initialization, layerType, idx;
+        int in, out, initialization, activation, layerType, idx;
         bool hasBias;
+        double (*act_function)(double);
+        double (*act_function_derivative)(double);
     public:
         DenseLayer(int, string, string, bool=true);
-        void init(int, int, int);
+        void init(int, int, int, int);
+        void init2();
         void forward();
         void backward();
         void firstDeltas(vector<double>);
         void update();
-        vector<Neuron> get_neurons();
         int getIn();
+        int getAct();
 };
 
 class ConvolutionalLayer
 {
     private:
-        vector<double> neurons;
-        int x, y, input_channels, kernel_x, kernel_y, stride_x, stride_y, new_kernels, activation, initialization, layerType;
+        int x, y, input_channels, kernel_x, kernel_y, stride_x, stride_y, new_kernels, activation, initialization, layerType, idx, padding_x, padding_y, out_per_wt_x, out_per_wt_y;
     public:
-        ConvolutionalLayer(vector<int>, vector<int>, int, string, string);
-        void init();
-        vector<double> forward();
+        ConvolutionalLayer(vector<int>, vector<int>, int, string, string, vector<int> = {0, 0});
+        void init(int, int);
+        void forward();
         vector<int> getIn();
         void backward();
         void update();
@@ -130,6 +105,7 @@ class NeuralNetwork
             int optimizer = 0;
             bool learningRateSet = false;
             double learningRate = 0.001;
+            int layerCnt = 0;
             for(int i = 0; i < sizeof params / sizeof params[0]; i++)
             {
                 if(holds_alternative<string>(params[i]) && i == 0)
@@ -144,16 +120,19 @@ class NeuralNetwork
                 {
                     Layer layer = get<DenseLayer*>(params[i]);
                     layers.push_back(layer);
+                    layerCnt++;
                 }
                 else if(holds_alternative<ConvolutionalLayer*>(params[i]))
                 {
                     Layer layer = get<ConvolutionalLayer*>(params[i]);
                     layers.push_back(layer);
+                    layerCnt++;
                 }
                 else if(holds_alternative<PoolingLayer*>(params[i]))
                 {
                     Layer layer = get<PoolingLayer*>(params[i]);
                     layers.push_back(layer);
+                    layerCnt++;
                 }
                 else if(holds_alternative<int>(params[i]) && i == (sizeof params / sizeof params[0])-1)
                 {
@@ -164,6 +143,12 @@ class NeuralNetwork
                     throw runtime_error("The parameters are not properly set. Format reminder (string optimizer(optional), double learningRate(optional), ...layers, int seed(optional))");
                 }
             }
+            neurons_per_layer = new int[layerCnt];
+            weights_per_layer = new int[layerCnt];
+            biases_per_layer = new int[layerCnt];
+            neuron_acc = new int[layerCnt];
+            weight_acc = new int[layerCnt];
+            bias_acc = new int[layerCnt];
             srand(this->seed);
             setGlobals(optimizer, learningRate);
             initialize();
@@ -183,9 +168,9 @@ class NeuralNetwork
         void stageResults();
         vector<Layer> layers;
         void initialize();
+        void final_pass();
 };
 
-extern StorageForNeuronsAndWeights globalStore;
 extern double learningRate;
 extern double beta1;
 extern double beta2;

@@ -1,13 +1,73 @@
 #include "mnist_images.hpp"
 #include "NeuralNetwork.hpp"
 #include "DataMining/power_consumption.hpp"
-#include "Testing/tests.hpp"
 #include <math.h>
 #include <chrono>
 
 void print_images(uchar**, int, int);
-void learnPowerConsumption();
+void learnPowerConsumption(bool, bool, int=0);
 void test_network();
+//OK we are going to recreate a faster dense network.
+//We will elminate complex classes for neurons class
+//We will use instead multiple arrays of data.
+//The only classes we will keep is for layers and for
+//the neural network itself. Global store of data will
+//still be a thing. 
+void test_net()
+{
+    NeuralNetwork nn(
+        "Adam",
+        0.1,
+        new DenseLayer(3, "Linear", "0.5"),
+        new DenseLayer(3, "ReLU", "0.5", false),
+        new DenseLayer(3, "Linear", ""),
+        118
+    );
+
+    vector<double> inp = {0.5, 0.5, 0.5};
+    vector<double> out;
+    out = nn.forward(inp);
+    for(int i = 0; i < 9; i++)
+    {
+        cout << neuron_value[i] << endl;
+    }
+    
+    vector<double> err = {5, -3, 2};
+    nn.backward(err);
+    cout << endl;
+    for(int i = 3; i < 9; i++)
+    {
+        cout << delta_value[i] << endl;
+    }
+    
+    nn.update();
+    for(int i = 0; i < 18; i++)
+    {
+        cout << i << endl;
+        cout << weight[i] << endl;
+    }
+    
+    out = nn.forward({0.2, 0.2, 0.2});
+    cout << endl;
+    for(int i = 0; i < 9; i++)
+    {
+        cout << neuron_value[i] << endl;
+    }
+    
+    nn.backward(err);
+    cout << endl;
+    for(int i = 3; i < 9; i++)
+    {
+        cout << delta_value[i] << endl;
+    }
+    
+    nn.update();
+    cout << endl;
+    for(int i = 0; i < 18; i++)
+    {
+        cout << weight[i] << endl;
+    }
+}
 
 int main (int argc, char *argv[])
 {
@@ -19,84 +79,9 @@ int main (int argc, char *argv[])
     uchar* test_labels = labelDataset("../src/data/t10k-labels-idx1-ubyte", number_of_labels_test);
     uchar* train_labels = labelDataset("../src/data/train-labels-idx1-ubyte", number_of_labels_train);
 
-    /* print_images(test_data, number_of_images_test, image_size_test); */
-
-    /* NeuralNetwork nn( */
-    /*         "Adam", */
-    /*         new DenseLayer(4, "Linear", "Xavier"), */
-    /*         new DenseLayer(6, "ReLU", "Xavier"), */
-    /*         new DenseLayer(8, "ReLU", "Xavier"), */
-    /*         new DenseLayer(3, "Linear", "") */
-    /*     ); */
-    /*  */
-    /* vector<double> data = {0.35, 5, -0.323, -3.045}; */
-    /* vector<double> res = nn.forward(data); */
-    /* for(int i = 0; i < res.size(); i++) */
-    /* { */
-    /*     cout << res[i] << endl; */
-    /* } */
-    /*  */
-    /* vector<double> error = {-1, 2, -0.5}; */
-    /* nn.backward(error); */
-    /* nn.update(); */
-    /*  */
-    /* cout << "completes" << endl; */
-    learnPowerConsumption();
-
-    /* updateTestDenseLayer(); */
-    /* test_network(); */
+    learnPowerConsumption(true, false);
 
     return 0;
-}
-
-void test_network()
-{
-    NeuralNetwork test(
-        "none",
-        0.01,
-        new DenseLayer(3, "Linear", "0.5"),
-        new DenseLayer(3, "ReLU", "0.5"),
-        new DenseLayer(3, "Linear", "")
-    );
-
-    vector<double> inp = {2, -2, 2};
-    vector<double> result = test.forward(inp);
-    
-    for(int i = 0; i < result.size(); i++)
-    {
-        cout << result[i] << ", ";
-    }
-    cout << endl;
-    vector<double> actual = {2, 2, 2};
-
-    test.backward(actual);
-    
-    for(int i = 1; i < globalStore.NeuronStore.size(); i++)
-    {
-        for(int j = 0; j < globalStore.NeuronStore[i].size(); j++)
-        {
-            cout << globalStore.NeuronStore[i][j]->get_delta() << ", ";
-        }
-        cout << endl;
-    }
-    cout << endl;
-
-    test.update();
-    for(int i = 0; i < globalStore.WeightStore.size()-1; i++)
-    {
-        for(int j = 0; j < globalStore.WeightStore[i].size(); j++)
-        {
-            cout << globalStore.WeightStore[i][j]->get_value() << ", ";
-        }
-        cout << "  <- Layer" << i << endl;
-    }
-
-    result = test.forward(inp);
-    
-    for(int i = 0; i < result.size(); i++)
-    {
-        cout << result[i] << ", ";
-    }
 }
 
 void print_images(uchar** list_of_images, int number_of_images, int size_of_image)
@@ -113,7 +98,7 @@ void print_images(uchar** list_of_images, int number_of_images, int size_of_imag
     }
 }
 
-void learnPowerConsumption()
+void learnPowerConsumption(bool bias, bool isSeed, int seed)
 {
     dataset processedData(32000, "../src/DataMining/data/tetuanCityPowerConsumption.csv", "Tetuan City Power Consumption");
     cout << "processing data" << endl;
@@ -122,17 +107,18 @@ void learnPowerConsumption()
     vector<dataset> train_test_data = processedData.split(26000, "train_data", "test_data");
     dataset train_data = train_test_data[0];
     dataset test_data = train_test_data[1];
+    if(!isSeed) seed = randomize();
 
     NeuralNetwork nn(
         "Adam",
         0.001,
         new DenseLayer(6, "Linear", "HeRandom"),
-        new DenseLayer(10, "ReLU", "HeRandom"),
-        new DenseLayer(5, "ReLU", "HeRandom"),
+        new DenseLayer(10, "ReLU", "HeRandom", bias),
+        new DenseLayer(5, "ReLU", "HeRandom", bias),
         new DenseLayer(3, "Linear", ""),
-        381
+        seed
     );
-
+    cout << nn.get_seed() << endl;
     vector<double> input(6, 0);
     vector<double> output(3, 0);
 
