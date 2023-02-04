@@ -4,6 +4,8 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_C_STANDARD 99)
 set(This cnn)
 
+set(CMAKE_CXX_FLAGS "-Wall -Wextra -g")
+
 project(${This} CXX C)
 
 include_directories(

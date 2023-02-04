@@ -16,8 +16,8 @@ ConvolutionalLayer::ConvolutionalLayer(vector<int> dimensions, vector<int> kerne
     this->hasBias = hasBias;
     this->activation = stringActivationToIntActivation(activation);
     this->initialization = stringInitializationToIntInitialization(initialization);
-    this->out_per_wt_x = ceil((this->x + this->padding_x*2 - this->kernel_x)/this->stride_x + 1);
-    this->out_per_wt_y = ceil((this->y + this->padding_y*2 - this->kernel_y)/this->stride_y + 1);
+    this->out_per_wt_x = ceil((double)(this->x + this->padding_x*2 - this->kernel_x)/(double)this->stride_x + 1);
+    this->out_per_wt_y = ceil((double)(this->y + this->padding_y*2 - this->kernel_y)/(double)this->stride_y + 1);
     switch(this->activation)
     {
         case 1:
@@ -48,7 +48,7 @@ void ConvolutionalLayer::init(int layerType, int idx, int next_layer_act)
         case 1:
             this->act_function = ReLU;
             break;
-        case 2:
+        default:
             this->act_function = Linear;
             break;
     }
@@ -97,55 +97,56 @@ void ConvolutionalLayer::forward()
     int MAXX = this->x-this->padding_x, MAXY = this->y-this->padding_y;
     int nStart = neuron_acc[this->idx];
     int wStart = weight_acc[this->idx];
-    int nStart_next = neuron_acc[this->idx];
-    int CHAN_SIZE_N = MAXX+MAXY, CHAN_SIZE_W = this->kernel_x*this->kernel_y*this->new_kernels;
+    int bStart = bias_acc[this->idx];
+    int nStart_next = neuron_acc[this->idx+1];
+    int CHAN_SIZE_N = MAXX*MAXY, CHAN_SIZE_W = this->kernel_x*this->kernel_y*this->new_kernels;
     int dim_of_kerns = this->kernel_x*this->kernel_y;
+    int biasCnt = 0, out = 0;
+    int next_lay_size = this->out_per_wt_x * this->out_per_wt_y;
 
-    int chandn = nStart-CHAN_SIZE_N, chandw = wStart-CHAN_SIZE_W;
-    //I have come up with idea to store each dimension in a hash map. As it will go
-    //through the same dimensions each time, no need to repeat calculations.
-    //i.e. no need for the following line.
-    int indim1 = this->kernel_x * this->kernel_y * this->new_kernels;
+    int chandn = nStart - CHAN_SIZE_N, chandw = wStart - CHAN_SIZE_W;
     for(int i = 0; i < this->input_channels; i++)
     {
         chandn += CHAN_SIZE_N;
         chandw += CHAN_SIZE_W;
-        int jdx = chandn-MAXY;
-        for(int j = this->padding_x; j < MAXX; j+=this->stride_x)
+        int kdx = chandn - MAXY*this->stride_x;
+        int jdx = chandw - dim_of_kerns;
+        for(int j = 0; j < this->new_kernels; j++)
         {
-            jdx += MAXY;
-            for(int k = this->padding_y; k < MAXY; k+=this->stride_y)
+            jdx += dim_of_kerns;
+            for(int k = this->padding_x; k < MAXX; k+=this->stride_x)
             {
-                neuron_value[jdx+k];
-                int wdx = chandw-dim_of_kerns;
-                //This layer does iterate through each neuron of each channel row wise
-                for(int w = 0; w < this->new_kernels; w++)
+                for(int z = 0; z < this->stride_x; z++)
                 {
-                    wdx += dim_of_kerns;
+                    kdx += MAXY;
+                }
+                for(int l = this->padding_y; l < MAXY; l+= this->stride_y)
+                {
                     double sum = 0;
-                    int xdx = wdx-this->kernel_y;
-                    for(int x = 0; x < this->kernel_x; x++)
+                    int adj_neur_acc = kdx - MAXY;
+                    int rdx = jdx - this->kernel_y;
+                    for(int r = 0; r < this->kernel_x; r++)
                     {
-                        xdx += this->kernel_y;
-                        if(x+j < MAXX)
+                        if(r+k >= MAXX) break;
+                        rdx += this->kernel_y;
+                        adj_neur_acc += MAXY;
+                        for(int w = 0; w < this->kernel_y; w++)
                         {
-                            for(int y = 0; y < this->kernel_y; y++)
-                            {
-                                if(y+k < MAXY)
-                                {
-                                    sum += neuron_value[jdx+k] * weight[xdx + y];
-
-                                    /* sum += globalStore.NeuronStore[this->idx][neur++]->get_value() * */
-                                    /*     globalStore.WeightStore[this->idx][]; */
-                                }
-                            }
-                            
+                            if(w+l >= MAXY) break;
+                            sum += neuron_value[adj_neur_acc+l+w] * weight[rdx+w];
                         }
                     }
-                    //TODO: need to locate this neuron
-                    //the output neuron
+                    if(this->hasBias)
+                    {
+                        sum += bias[bStart + biasCnt++];
+                    }
+                    int idx = nStart_next + out * next_lay_size + k/this->stride_x * this->out_per_wt_y + l/this->stride_y;
+                    cache_value[idx] = sum;
+                    neuron_value[idx] = this->act_function(sum);
                 }
             }
+            out++;
+            kdx = chandn - MAXY*this->stride_x;
         }
     }
 }

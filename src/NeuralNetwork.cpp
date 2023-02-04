@@ -27,6 +27,7 @@ int stringActivationToIntActivation(string activation_function)
 {
     if(activation_function == "Linear" || activation_function == "") return 0;
     if(activation_function == "ReLU") return 1;
+    if(activation_function == "SoftMax" || activation_function == "Softmax") return 2;
     return 0;
 }
 
@@ -65,7 +66,7 @@ void NeuralNetwork::createResultBuffer()
 void NeuralNetwork::initialize()
 {
     seed = this->seed;
-    for(int i = 0; i < layers.size(); i++)
+    for(unsigned long int i = 0; i < layers.size(); i++)
     {
         int output_size = 0, act_function = 0;
         if(i != layers.size()-1)
@@ -104,13 +105,12 @@ void NeuralNetwork::initialize()
     int total_neurons = 0;
     int total_weights = 0;
     int total_biases = 0;
-    for(int i = 0; i < this->layers.size(); i++)
+    for(unsigned long int i = 0; i < this->layers.size(); i++)
     {
         total_neurons += neurons_per_layer[i];
         total_weights += weights_per_layer[i];
         total_biases += biases_per_layer[i];
     }
-    /* cout << "nm of neurs: " << total_neurons << endl; */
     neuron_value = new double[total_neurons];
     cache_value = new double[total_neurons];
     delta_value = new double[total_neurons];
@@ -128,18 +128,22 @@ void NeuralNetwork::initialize()
 
 void NeuralNetwork::final_pass()
 {
-    for(int i = 0; i < this->layers.size(); i++)
+    for(unsigned long int i = 0; i < this->layers.size(); i++)
     {
         if(holds_alternative<DenseLayer*>(this->layers[i]))
         {
             get<DenseLayer*>(this->layers[i])->init2();
+        }
+        if(holds_alternative<ConvolutionalLayer*>(this->layers[i]))
+        {
+            get<ConvolutionalLayer*>(this->layers[i])->init2();
         }
     }
 }
 
 void NeuralNetwork::stageNetwork(vector<double> input)
 {
-    for(int i = 0; i < input.size(); i++)
+    for(unsigned long int i = 0; i < input.size(); i++)
     {
         neuron_value[i] = input[i];
     }
@@ -148,7 +152,7 @@ void NeuralNetwork::stageNetwork(vector<double> input)
 void NeuralNetwork::stageResults()
 {
     int nStart = neuron_acc[this->layers.size()-1];
-    for(int i = 0; i < this->result_buf.size(); i++)
+    for(unsigned long int i = 0; i < this->result_buf.size(); i++)
     {
         this->result_buf[i] = neuron_value[nStart+i];
     }
@@ -158,7 +162,7 @@ vector<double> NeuralNetwork::forward(vector<double> input)
 {
     this->stageNetwork(input);    
 
-    for(int i = 0; i < this->layers.size()-1; i++)
+    for(unsigned long int i = 0; i < this->layers.size()-1; i++)
     {
         if(holds_alternative<DenseLayer*>(this->layers[i]))
         {
@@ -181,7 +185,7 @@ void NeuralNetwork::backward(vector<double> errors)
         get<DenseLayer*>(this->layers[this->layers.size()-1])->firstDeltas(errors);
     }
 
-    for(int i = this->layers.size()-2; i > 0; i--)
+    for(unsigned long int i = this->layers.size()-2; i > 0; i--)
     {
         if(holds_alternative<DenseLayer*>(this->layers[i]))
         {
@@ -192,7 +196,7 @@ void NeuralNetwork::backward(vector<double> errors)
 
 void NeuralNetwork::update()
 {
-    for(int i = 0; i < this->layers.size()-1; i++)
+    for(unsigned long int i = 0; i < this->layers.size()-1; i++)
     {
         if(holds_alternative<DenseLayer*>(this->layers[i]))
         {

@@ -69,6 +69,30 @@ void test_net()
     }
 }
 
+void test_conv()
+{
+    vector<double> inp(50, 1);
+
+    NeuralNetwork cnn(
+        new ConvolutionalLayer({5, 5, 2}, {3, 3, 1, 1}, 4, "Linear", "0.5"),
+        new DenseLayer(72, "Linear", "0.5")
+    );
+
+    vector<double> out = cnn.forward(inp);
+
+    /* for(int i = 0; i < out.size(); i++) */
+    /* { */
+    /*     cout << out[i] << ", " << endl; */
+    /* } */
+}
+
+void size_of_pntr()
+{
+    int *ptr = new int[50];
+
+    cout << sizeof(ptr)/sizeof(int) << endl;
+}
+
 int main (int argc, char *argv[])
 {
     int number_of_images_test = 0, image_size_test = 0, number_of_images_train = 0, image_size_train = 0;
@@ -78,8 +102,45 @@ int main (int argc, char *argv[])
     
     uchar* test_labels = labelDataset("../src/data/t10k-labels-idx1-ubyte", number_of_labels_test);
     uchar* train_labels = labelDataset("../src/data/train-labels-idx1-ubyte", number_of_labels_train);
+    /* cout << "train_num: " << image_size_train << endl; */
+    /* cout << "test_num: " << image_size_test << endl; */
+    NeuralNetwork cnn(
+        new ConvolutionalLayer({28, 28, 1}, {3, 3, 2, 2}, 4, "Linear", "HeRandom"),
+        new ConvolutionalLayer({14, 14, 4}, {3, 3, 2, 2}, 2, "ReLU", "HeRandom"),
+        new ConvolutionalLayer({7, 7, 8}, {2, 2, 1, 1}, 2, "ReLU", "HeRandom"),
+        new DenseLayer(576, "ReLU", "HeRandom"),
+        new DenseLayer(10, "Softmax", "")
+    );
+    vector<vector<double>> input(number_of_images_train, vector<double>(image_size_train));
+    
+    for(int i = 0; i < number_of_images_test; i++)
+    {
+        for(int j = 0; j < image_size_train; j++)
+        {
+            input[i][j] = static_cast<double>(train_data[i][j]);
+        }
+    }
 
-    learnPowerConsumption(true, true, 399);
+    vector<double> out = cnn.forward(input[0]);
+    cout << "Size of training data set: " << number_of_images_train << endl;
+    cout << "Training started: " << endl;
+
+    /* auto start = chrono::_V2::high_resolution_clock::now(); */
+    /* for(int i = 0; i < input.size(); i++) */
+    /* { */
+    /*     cnn.forward(input[i]); */
+    /* } */
+    /* auto stop = chrono::_V2::high_resolution_clock::now(); */
+    /* auto duration = chrono::duration_cast<chrono::microseconds>(stop-start); */
+    /* cout << "runtime: " << duration.count() * 0.000001 << " seconds." << endl; */
+    for(int i = 0; i < out.size(); i++)
+    {
+        cout << out[i] << endl;
+    }
+    /* size_of_pntr(); */
+
+    /* learnPowerConsumption(true, true, 399); */
+    /* test_conv(); */
 
     return 0;
 }
@@ -113,7 +174,7 @@ void learnPowerConsumption(bool bias, bool isSeed, int seed)
         "Adam",
         0.001,
         new DenseLayer(6, "Linear", "HeRandom"),
-        new DenseLayer(35, "ReLU", "HeRandom", bias),
+        new DenseLayer(5, "ReLU", "HeRandom", bias),
         new DenseLayer(35, "ReLU", "HeRandom", bias),
         new DenseLayer(35, "ReLU", "HeRandom", bias),
         new DenseLayer(35, "ReLU", "HeRandom", bias),

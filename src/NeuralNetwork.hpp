@@ -46,15 +46,18 @@ int randomize();
 class DenseLayer
 {
     private:
-        int in, out, initialization, activation, layerType, idx;
+        int in, out, initialization, activation, layerType, idx, next_activation;
         bool hasBias;
         double (*act_function)(double);
         double (*act_function_derivative)(double);
+        double* (*softmax)(double*, int);
+        double* (*softmax_derivative)(double*, int);
     public:
         DenseLayer(int, string, string, bool=true);
         void init(int, int, int, int);
         void init2();
         void forward();
+        void forward_soft();
         void backward();
         void firstDeltas(vector<double>);
         void update();

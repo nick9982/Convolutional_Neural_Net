@@ -30,6 +30,28 @@ double LinearDerivative(double input)
     return 1;
 }
 
+double* SoftMax(double *input, int size)
+{
+    double sum = 0;
+    for(int i = 0; i < size; i++)
+    {
+        cout << "inp: " << input[i] << endl;
+        input[i] = exp(input[i]);
+        sum += input[i];
+    }
+
+    for(int i = 0; i < size; i++)
+    {
+        input[i] = input[i]/sum;
+    }
+    return input;
+}
+
+double* SoftMaxDerivative(double* input, int size)
+{
+    return input;
+}
+
 /*  Initialization functions  */
 double HeRandomInNormal(int input)
 {

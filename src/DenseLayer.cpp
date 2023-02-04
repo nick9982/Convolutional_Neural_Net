@@ -13,6 +13,8 @@ DenseLayer::DenseLayer(int nodes, string activation, string initialization, bool
         case 1:
             this->act_function_derivative = ReLUDerivative;
             break;
+        case 2:
+            this->softmax_derivative = SoftMaxDerivative;
         default:
             this->act_function_derivative = LinearDerivative;
             break;
@@ -34,6 +36,7 @@ void DenseLayer::init(int output, int layerType, int idx, int next_layer_act)
     this->out = output;
     this->layerType = layerType;
     this->idx = idx;
+    this->next_activation = next_layer_act;
     neurons_per_layer[this->idx] = this->in;
     weights_per_layer[this->idx] = this->in*this->out;
     if(layerType < 2)
@@ -43,6 +46,8 @@ void DenseLayer::init(int output, int layerType, int idx, int next_layer_act)
         case 1:
             this->act_function = ReLU;
             break;
+        case 2:
+            this->softmax = SoftMax;
         default:
             this->act_function = Linear;
             break;
@@ -93,6 +98,11 @@ void DenseLayer::init2()
 
 void DenseLayer::forward()
 {
+    if(this->next_activation == 2)
+    {
+        this->forward_soft();
+        return;
+    }
     int nStart = neuron_acc[this->idx];
     int wStart = weight_acc[this->idx];
     int bStart = bias_acc[this->idx];
@@ -110,6 +120,35 @@ void DenseLayer::forward()
         if(this->hasBias) sum+=bias[bStart];
         neuron_value[nStart_next+i] = this->act_function(sum);
         cache_value[nStart_next+i] = sum;
+    }
+}
+
+void DenseLayer::forward_soft()
+{
+    int nStart = neuron_acc[this->idx];
+    int wStart = weight_acc[this->idx];
+    int bStart = bias_acc[this->idx];
+    int nStart_next = neuron_acc[this->idx+1];
+
+    double* output_cache = new double[this->out];
+
+    for(int i = 0; i < this->out; i++)
+    {
+        int jdx = wStart-this->out;
+        double sum = 0;
+        for(int j = 0; j < this->in; j++)
+        {
+            jdx += this->out;
+            sum += neuron_value[nStart+j]*weight[jdx+i];
+        }
+        if(this->hasBias) sum+=bias[bStart];
+        cache_value[nStart_next+i] = sum;
+        output_cache[i] = sum;
+    }
+    output_cache = this->softmax(output_cache, this->out);
+    for(int i = 0; i < this->out; i++)
+    {
+        neuron_value[nStart_next+i] = output_cache[i];
     }
 }
 
