@@ -1,6 +1,7 @@
 #include "mnist_images.hpp"
 #include "NeuralNetwork.hpp"
 #include "DataMining/power_consumption.hpp"
+#include <cmath>
 #include <math.h>
 #include <chrono>
 
@@ -80,10 +81,10 @@ void test_conv()
 
     vector<double> out = cnn.forward(inp);
 
-    /* for(int i = 0; i < out.size(); i++) */
-    /* { */
-    /*     cout << out[i] << ", " << endl; */
-    /* } */
+    for(int i = 0; i < out.size(); i++)
+    {
+        cout << out[i] << ", ";
+    }
 }
 
 void size_of_pntr()
@@ -104,16 +105,19 @@ int main (int argc, char *argv[])
     uchar* train_labels = labelDataset("../src/data/train-labels-idx1-ubyte", number_of_labels_train);
     /* cout << "train_num: " << image_size_train << endl; */
     /* cout << "test_num: " << image_size_test << endl; */
+    print_images(train_data, number_of_labels_train, image_size_train);
+    exit(0);
     NeuralNetwork cnn(
         new ConvolutionalLayer({28, 28, 1}, {3, 3, 2, 2}, 4, "Linear", "HeRandom"),
         new ConvolutionalLayer({14, 14, 4}, {3, 3, 2, 2}, 2, "ReLU", "HeRandom"),
         new ConvolutionalLayer({7, 7, 8}, {2, 2, 1, 1}, 2, "ReLU", "HeRandom"),
         new DenseLayer(576, "ReLU", "HeRandom"),
-        new DenseLayer(10, "Softmax", "")
+        new DenseLayer(10, "Softmax", ""),
+        103
     );
     vector<vector<double>> input(number_of_images_train, vector<double>(image_size_train));
     
-    for(int i = 0; i < number_of_images_test; i++)
+    for(int i = 0; i < number_of_images_train; i++)
     {
         for(int j = 0; j < image_size_train; j++)
         {
@@ -121,22 +125,100 @@ int main (int argc, char *argv[])
         }
     }
 
-    vector<double> out = cnn.forward(input[0]);
+    vector<vector<double>> test(number_of_images_test, vector<double>(image_size_test));
+
+    for(int i = 0; i < number_of_images_test; i++)
+    {
+        for(int j = 0; j < image_size_test; j++)
+        {
+            input[i][j] = static_cast<double>(test_data[i][j]);
+        }
+    }
+    /* test_conv(); */
+    /* exit(0); */
+
+    /* vector<double> out = cnn.forward(input[0]); */
     cout << "Size of training data set: " << number_of_images_train << endl;
     cout << "Training started: " << endl;
 
-    /* auto start = chrono::_V2::high_resolution_clock::now(); */
-    /* for(int i = 0; i < input.size(); i++) */
-    /* { */
-    /*     cnn.forward(input[i]); */
-    /* } */
-    /* auto stop = chrono::_V2::high_resolution_clock::now(); */
-    /* auto duration = chrono::duration_cast<chrono::microseconds>(stop-start); */
-    /* cout << "runtime: " << duration.count() * 0.000001 << " seconds." << endl; */
-    for(int i = 0; i < out.size(); i++)
+    vector<double> error(10);
+    auto start = chrono::_V2::high_resolution_clock::now();
+    for(int i = 0; i < input.size(); i++)
     {
-        cout << out[i] << endl;
+        vector<double> out = cnn.forward(input[i]);
+        /* cout << "image: " << i << endl; */
+        /* for(int i = 0; i < out.size(); i++) */
+        /* { */
+        /*     cout << "output: " << out[i] << endl; */
+        /* } */
+        switch(train_labels[i])
+        {
+            case 0:
+                error = {1, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+                break;
+            case 1:
+                error = {0, 1, 0, 0, 0, 0, 0, 0, 0, 0};
+                break;
+            case 2:
+                error = {0, 0, 1, 0, 0, 0, 0, 0, 0, 0};
+                break;
+            case 3:
+                error = {0, 0, 0, 1, 0, 0, 0, 0, 0, 0};
+                break;
+            case 4:
+                error = {0, 0, 0, 0, 1, 0, 0, 0, 0, 0};
+                break;
+            case 5:
+                error = {0, 0, 0, 0, 0, 1, 0, 0, 0, 0};
+                break;
+            case 6:
+                error = {0, 0, 0, 0, 0, 0, 1, 0, 0, 0};
+                break;
+            case 7:
+                error = {0, 0, 0, 0, 0, 0, 0, 1, 0, 0};
+                break;
+            case 8:
+                error = {0, 0, 0, 0, 0, 0, 0, 0, 1, 0};
+                break;
+            case 9:
+                error = {0, 0, 0, 0, 0, 0, 0, 0, 0, 1};
+                break;
+        }
+        if(i % 2500 == 0)
+        {
+            cout << "At point " << i << "/60000 the output is" << endl;
+            cout << "actual: " << +train_labels[i] << endl;
+            for(int x = 0; x < out.size(); x++)
+            {
+                cout << x << ": " << out[x]*100 << "%" << endl;
+            }
+        }
+        cnn.backward(error);
+        cnn.update();
     }
+    auto stop = chrono::_V2::high_resolution_clock::now();
+    auto duration = chrono::duration_cast<chrono::microseconds>(stop-start);
+    cout << "runtime: " << duration.count() * 0.000001 << " seconds." << endl;
+
+    //TESTING MODEL:
+
+    for(int i = 0; i < 20; i++)
+    {
+        vector<double> out = cnn.forward(test[i]);
+        cout << "Estimation: " << endl;
+        for(int i = 0; i < out.size(); i++)
+        {
+            cout << i+1 << ": " << out[i] << "%" << endl;
+        }
+
+        cout << "actual: " << +test_labels[i] << endl;
+    }
+    /* for(int i = 0; i < out.size(); i++) */
+    /* { */
+    /*     cout << out[i] << endl; */
+    /* } */
+    /* vector<double> error = {0, 0, 0, 0, 0, 0, 1, 0, 0, 0}; */
+    /* cnn.backward(error); */
     /* size_of_pntr(); */
 
     /* learnPowerConsumption(true, true, 399); */

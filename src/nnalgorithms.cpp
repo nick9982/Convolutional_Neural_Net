@@ -35,7 +35,8 @@ double* SoftMax(double *input, int size)
     double sum = 0;
     for(int i = 0; i < size; i++)
     {
-        cout << "inp: " << input[i] << endl;
+        /* cout << "inp: " << input[i] << endl; */
+        /* cout << "exp(^): " << exp(input[i]) << endl; */
         input[i] = exp(input[i]);
         sum += input[i];
     }
@@ -49,6 +50,17 @@ double* SoftMax(double *input, int size)
 
 double* SoftMaxDerivative(double* input, int size)
 {
+    double sum = 0;
+    for(int i = 0; i < size; i++)
+    {
+        input[i] = exp(input[i]);
+        sum += input[i];
+    }
+
+    for(int i = 0; i < size; i++)
+    {
+        input[i] = (input[i]/sum) * (1 - (input[i]/sum));
+    }
     return input;
 }
 

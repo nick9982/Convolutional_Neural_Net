@@ -92,7 +92,140 @@ void ConvolutionalLayer::init2()
     }
 }
 
+/* void ConvolutionalLayer::forward() */
+/* { */
+/*     int MAXX = this->x-this->padding_x, MAXY = this->y-this->padding_y; */
+/*     int nStart = neuron_acc[this->idx]; */
+/*     int wStart = weight_acc[this->idx]; */
+/*     int nStart_next = neuron_acc[this->idx+1]; */
+/*     int CHAN_SIZE_N = MAXX*MAXY, CHAN_SIZE_W = this->kernel_x*this->kernel_y*this->new_kernels; */
+/*     int dim_of_kerns = this->kernel_x*this->kernel_y; */
+/*     int biasCnt = bias_acc[this->idx], out = 0; */
+/*     int next_lay_size = this->out_per_wt_x * this->out_per_wt_y; */
+/*     int mulp = MAXY*this->stride_x; */
+/*  */
+/*     int chandn = nStart - CHAN_SIZE_N, chandw = wStart - CHAN_SIZE_W; */
+/*     for(int i = 0; i < this->input_channels; i++) */
+/*     { */
+/*         chandn += CHAN_SIZE_N; */
+/*         chandw += CHAN_SIZE_W; */
+/*         int jdx = chandw - dim_of_kerns; */
+/*         for(int j = 0; j < this->new_kernels; j++) */
+/*         { */
+/*             jdx += dim_of_kerns; */
+/*             int kdx = chandn - mulp; */
+/*             for(int k = 0; k < MAXX; k+=this->stride_x) */
+/*             { */
+/*                 kdx += mulp; */
+/*                 for(int l = 0; l < MAXY; l+= this->stride_y) */
+/*                 { */
+                    /* if(this->idx == 0)cout << "kdx+l: " << kdx + l << endl; */
+/*                     double sum = 0; */
+/*                     int adj_neur_acc = kdx - MAXY; */
+/*                     int rdx = jdx - this->kernel_y; */
+/*                     for(int r = 0; r < this->kernel_x; r++) */
+/*                     { */
+/*                         if(r+k >= MAXX) break; */
+/*                         rdx += this->kernel_y; */
+/*                         adj_neur_acc += MAXY; */
+/*                         for(int w = 0; w < this->kernel_y; w++) */
+/*                         { */
+/*                             if(w+l >= MAXY) break; */
+/*                             sum += neuron_value[adj_neur_acc+l+w] * weight[rdx+w]; */
+/*                             cout << adj_neur_acc+l+w << endl; */
+/*                         } */
+/*                     } */
+/*                     if(this->hasBias) */
+/*                     { */
+/*                         sum += bias[biasCnt++]; */
+/*                     } */
+/*                     int idx = nStart_next + out * next_lay_size + ceil((double)k/this->stride_x) * this->out_per_wt_y + ceil((double)l/this->stride_y); */
+/*                     cout << "valer: " << idx << endl; */
+/*                     cache_value[idx] = sum; */
+                    /* if(this->idx == 0) cout << "idx: " << idx << endl; */
+                    /* cout << "sum: " << sum << endl; */
+/*                     neuron_value[idx] = this->act_function(sum); */
+                    /* cout << "layer: " << this->idx << " value: " << neuron_value[idx] << endl; */
+/*                 } */
+/*             } */
+/*             out++; */
+/*         } */
+/*     } */
+/*     if(this->idx == 0)cout << neuron_acc[this->idx] << endl; */
+/*     if(this->idx == 0)cout << neuron_acc[this->idx+1] << endl; */
+/*     if(this->idx == 0)cout << neuron_acc[this->idx+2] << endl; */
+/* } */
+
 void ConvolutionalLayer::forward()
+{
+    int nStart = neuron_acc[this->idx];
+    int wStart = weight_acc[this->idx];
+    int nStart_next = neuron_acc[this->idx+1];
+    int CHAN_SIZE_N = this->x*this->y, CHAN_SIZE_W = this->kernel_x*this->kernel_y*this->new_kernels;
+    int dim_of_kerns = this->kernel_x*this->kernel_y;
+    int biasCnt = bias_acc[this->idx], out = 0;
+    int next_lay_size = this->out_per_wt_x * this->out_per_wt_y;
+    int mulp = this->y*this->stride_x;
+    int chandn = nStart - CHAN_SIZE_N, chandw = wStart - CHAN_SIZE_W;
+
+    for(int i = 0; i < this->input_channels; i++)
+    {
+        chandn += CHAN_SIZE_N;
+        chandw += CHAN_SIZE_W;
+        int jdx = chandw - dim_of_kerns;
+        for(int j = 0; j < this->new_kernels; j++)
+        {
+            jdx += dim_of_kerns;
+            int kdx = chandn - mulp;
+            for(int k = 0; k < this->x; k+=this->stride_x)
+            {
+                kdx += mulp;
+                for(int l = 0; l < this->y; l+=this->stride_y)
+                {
+                    double sum = 0;
+                    int adj_neur_acc = kdx - this->y;
+                    int rdx = jdx - this->kernel_y;
+                    vector<double> wts;
+                    vector<double> nrs;
+                    vector<double> calculations;
+                    for(int r = 0; r < this->kernel_x; r++)
+                    {
+                        if(r+k >= this->x) break;
+                        rdx += this->kernel_y;
+                        adj_neur_acc += this->y;
+                        for(int w = 0; w  < this->kernel_y; w++)
+                        {
+                            if(w+l >= this->y) break;
+                            sum += neuron_value[adj_neur_acc+l+w] * weight[rdx+w];
+                            wts.push_back(weight[rdx+w]);
+                            nrs.push_back(neuron_value[adj_neur_acc+l+w]);
+                            calculations.push_back(sum);
+
+                            /* if(k == 10 && l == 12) */
+                            /* { */
+                            /*     cout << "nrval: " << neuron_value[adj_neur_acc+l+w] << endl; */
+                            /*     cout << "wtval: " << weight[rdx+w] << endl; */
+                            /* } */
+                        }
+                    }
+                    if(this->hasBias)
+                    {
+                        //biases are causing small value problem.
+                        sum += bias[biasCnt];
+                    }
+                    int idx = nStart_next + out * next_lay_size + k/this->stride_x * this->out_per_wt_y + l/this->stride_y;
+                    cache_value[idx] = sum;
+                    bool error = false;
+                    neuron_value[idx] = this->act_function(sum);
+                }
+            }
+            biasCnt++;
+            out++;
+        }
+    }
+}
+
+void ConvolutionalLayer::backward()
 {
     int MAXX = this->x-this->padding_x, MAXY = this->y-this->padding_y;
     int nStart = neuron_acc[this->idx];
@@ -101,52 +234,116 @@ void ConvolutionalLayer::forward()
     int nStart_next = neuron_acc[this->idx+1];
     int CHAN_SIZE_N = MAXX*MAXY, CHAN_SIZE_W = this->kernel_x*this->kernel_y*this->new_kernels;
     int dim_of_kerns = this->kernel_x*this->kernel_y;
-    int biasCnt = 0, out = 0;
     int next_lay_size = this->out_per_wt_x * this->out_per_wt_y;
-
+    
     int chandn = nStart - CHAN_SIZE_N, chandw = wStart - CHAN_SIZE_W;
     for(int i = 0; i < this->input_channels; i++)
     {
         chandn += CHAN_SIZE_N;
         chandw += CHAN_SIZE_W;
-        int kdx = chandn - MAXY*this->stride_x;
+        int jdx = chandn - MAXY;
+        for(int j = 0; j < MAXX; j++)
+        {
+            int OFFS_X = floor((double)(j%this->kernel_x) / this->stride_x);
+            jdx += MAXY;
+            for(int k = 0; k < MAXY; k++)
+            {
+                int OFFS_Y = floor((double)(k%this->kernel_y) / this->stride_y);
+                double neuron_derivative = this->act_function_derivative(cache_value[jdx+k]);
+                double sum = 0;
+                int rdx = chandw - dim_of_kerns;
+                for(int r = 0; r < this->new_kernels; r++)
+                {
+                    int idx = nStart_next + ((i*this->new_kernels)+r) * next_lay_size + (ceil((double)j/this->stride_x)+OFFS_X) * this->out_per_wt_y + ceil((double)k/this->stride_y)+OFFS_Y;
+                    rdx += dim_of_kerns;
+                    int dispx = 0;
+                    for(int x = j%this->kernel_x; x >= 0; x-=this->stride_x)
+                    {
+                        int dispy = 0;
+                        for(int y = k%this->kernel_y; y >= 0; y-=this->stride_y)
+                        {
+                            sum += delta_value[idx - dispx * this->out_per_wt_y - dispy++] * weight[rdx + x*this->kernel_y+y] * neuron_derivative;
+                        }
+                        dispx++;
+                    }
+                }
+                /* cout << "sum: " << sum << endl; */
+                delta_value[jdx+k] = sum;
+            }
+        }
+    }
+}
+
+//There are multiple inp neuron X output neuron combinations for each weight.
+//The gradient for each weight is the sum of the gradient of these combinations.
+//What we really are doing here is cycling through each weight and idxing each
+//respective pair of input neuron X output neuron.
+//i.e. inp neur = neuron_value[nStart + a] * delta_value[nStart_next + x];
+//sum those up for each weight then update.
+void ConvolutionalLayer::update()
+{
+    int MAXX = this->x-this->padding_x, MAXY = this->y-this->padding_y;
+    int nStart = neuron_acc[this->idx];
+    int wStart = weight_acc[this->idx];
+    int biasCnt = bias_acc[this->idx];
+    int nStart_next = neuron_acc[this->idx+1];
+    int mulp = this->y * this->stride_x;
+    int CHAN_SIZE_N = MAXX*MAXY, CHAN_SIZE_W = this->kernel_x*this->kernel_y*this->new_kernels;
+    int next_lay_size = this->out_per_wt_x * this->out_per_wt_y;
+    int out = 0;
+
+    int chandw = wStart - CHAN_SIZE_W, chandn = nStart - CHAN_SIZE_N;
+    int dim_of_kerns = this->kernel_x*this->kernel_y;
+    for(int i = 0; i < this->input_channels; i++)
+    {
+        chandw += CHAN_SIZE_W;
+        chandn += CHAN_SIZE_N;
         int jdx = chandw - dim_of_kerns;
         for(int j = 0; j < this->new_kernels; j++)
         {
             jdx += dim_of_kerns;
-            for(int k = this->padding_x; k < MAXX; k+=this->stride_x)
+            int kdx = jdx - this->kernel_y;
+            double delta_sum = 0;
+            for(int k = 0; k < this->kernel_x; k++)
             {
-                for(int z = 0; z < this->stride_x; z++)
+                kdx += this->kernel_y;
+                for(int m = 0; m < this->kernel_y; m++)
                 {
-                    kdx += MAXY;
-                }
-                for(int l = this->padding_y; l < MAXY; l+= this->stride_y)
-                {
-                    double sum = 0;
-                    int adj_neur_acc = kdx - MAXY;
-                    int rdx = jdx - this->kernel_y;
-                    for(int r = 0; r < this->kernel_x; r++)
+                    double weightval = weight[kdx + m];
+                    double gradient = 0;
+                    //NOW WE ACCESS EACH WEIGHT WITH weight[kdx+m]
+                    int xdx = chandn - mulp;
+                    int out_x = 0;
+                    for(int x = k; x < this->x; x+=this->stride_x)
                     {
-                        if(r+k >= MAXX) break;
-                        rdx += this->kernel_y;
-                        adj_neur_acc += MAXY;
-                        for(int w = 0; w < this->kernel_y; w++)
+                        xdx += this->y * mulp;
+                        int out_y = 0;
+                        for(int y = m; y < this->y; y+=this->stride_y)
                         {
-                            if(w+l >= MAXY) break;
-                            sum += neuron_value[adj_neur_acc+l+w] * weight[rdx+w];
+                            int idx = nStart_next + out * next_lay_size + out_x*this->out_per_wt_y + out_y++;
+                            gradient += neuron_value[xdx + y] * delta_value[idx];
+                            delta_sum += delta_value[idx];
                         }
+                        out_x++;
                     }
-                    if(this->hasBias)
-                    {
-                        sum += bias[bStart + biasCnt++];
-                    }
-                    int idx = nStart_next + out * next_lay_size + k/this->stride_x * this->out_per_wt_y + l/this->stride_y;
-                    cache_value[idx] = sum;
-                    neuron_value[idx] = this->act_function(sum);
+                    int w = kdx+m;
+                    wm[w] = beta1 * wm[w] + (1 - beta1) * gradient;
+                    wv[w] = beta2 * wv[w] + (1 - beta2) * pow(gradient, 2);
+                    double mhat = wm[w] / (1-pow(beta1, epoch));
+                    double vhat = wv[w] / (1-pow(beta2, epoch));
+                    weight[w] -= (learningRate / (sqrt(vhat + 1e-8)) * mhat);
                 }
             }
+            if(this->hasBias)
+            {
+                int b = biasCnt++;
+                bm[b] = beta1 * bm[b] + (1 - beta1) * delta_sum;
+                bv[b] = beta2 * bv[b] + (1 - beta2) * pow(delta_sum, 2);
+                double mhat = bm[b] / (1-pow(beta1, epoch));
+                double vhat = bv[b] / (1-pow(beta2, epoch));
+                bias[b] -= (learningRate / (sqrt(vhat + 1e-8)) * mhat);
+            }
             out++;
-            kdx = chandn - MAXY*this->stride_x;
         }
     }
 }

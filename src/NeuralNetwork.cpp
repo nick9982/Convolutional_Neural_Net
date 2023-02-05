@@ -114,6 +114,12 @@ void NeuralNetwork::initialize()
     neuron_value = new double[total_neurons];
     cache_value = new double[total_neurons];
     delta_value = new double[total_neurons];
+    for(int i = 0; i < total_neurons; i++)
+    {
+        neuron_value[i] = 0;
+        cache_value[i] = 0;
+        delta_value[i] = 0;
+    }
 
     weight = new double[total_weights];
     wv = new double[total_weights];
@@ -190,6 +196,10 @@ void NeuralNetwork::backward(vector<double> errors)
         if(holds_alternative<DenseLayer*>(this->layers[i]))
         {
             get<DenseLayer*>(this->layers[i])->backward();
+        }
+        else if(holds_alternative<ConvolutionalLayer*>(this->layers[i]))
+        {
+            get<ConvolutionalLayer*>(this->layers[i])->backward();
         }
     }
 }

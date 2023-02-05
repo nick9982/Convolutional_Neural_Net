@@ -60,6 +60,7 @@ class DenseLayer
         void forward_soft();
         void backward();
         void firstDeltas(vector<double>);
+        void firstDeltas_soft(vector<double>);
         void update();
         int getIn();
         int getAct();
