@@ -185,9 +185,6 @@ void ConvolutionalLayer::forward()
                     double sum = 0;
                     int adj_neur_acc = kdx - this->y;
                     int rdx = jdx - this->kernel_y;
-                    vector<double> wts;
-                    vector<double> nrs;
-                    vector<double> calculations;
                     for(int r = 0; r < this->kernel_x; r++)
                     {
                         if(r+k >= this->x) break;
@@ -197,25 +194,14 @@ void ConvolutionalLayer::forward()
                         {
                             if(w+l >= this->y) break;
                             sum += neuron_value[adj_neur_acc+l+w] * weight[rdx+w];
-                            wts.push_back(weight[rdx+w]);
-                            nrs.push_back(neuron_value[adj_neur_acc+l+w]);
-                            calculations.push_back(sum);
-
-                            /* if(k == 10 && l == 12) */
-                            /* { */
-                            /*     cout << "nrval: " << neuron_value[adj_neur_acc+l+w] << endl; */
-                            /*     cout << "wtval: " << weight[rdx+w] << endl; */
-                            /* } */
                         }
                     }
                     if(this->hasBias)
                     {
-                        //biases are causing small value problem.
                         sum += bias[biasCnt];
                     }
                     int idx = nStart_next + out * next_lay_size + k/this->stride_x * this->out_per_wt_y + l/this->stride_y;
                     cache_value[idx] = sum;
-                    bool error = false;
                     neuron_value[idx] = this->act_function(sum);
                 }
             }
@@ -267,7 +253,6 @@ void ConvolutionalLayer::backward()
                         dispx++;
                     }
                 }
-                /* cout << "sum: " << sum << endl; */
                 delta_value[jdx+k] = sum;
             }
         }

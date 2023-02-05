@@ -105,8 +105,6 @@ int main (int argc, char *argv[])
     uchar* train_labels = labelDataset("../src/data/train-labels-idx1-ubyte", number_of_labels_train);
     /* cout << "train_num: " << image_size_train << endl; */
     /* cout << "test_num: " << image_size_test << endl; */
-    print_images(train_data, number_of_labels_train, image_size_train);
-    exit(0);
     NeuralNetwork cnn(
         new ConvolutionalLayer({28, 28, 1}, {3, 3, 2, 2}, 4, "Linear", "HeRandom"),
         new ConvolutionalLayer({14, 14, 4}, {3, 3, 2, 2}, 2, "ReLU", "HeRandom"),
@@ -146,11 +144,6 @@ int main (int argc, char *argv[])
     for(int i = 0; i < input.size(); i++)
     {
         vector<double> out = cnn.forward(input[i]);
-        /* cout << "image: " << i << endl; */
-        /* for(int i = 0; i < out.size(); i++) */
-        /* { */
-        /*     cout << "output: " << out[i] << endl; */
-        /* } */
         switch(train_labels[i])
         {
             case 0:
@@ -202,13 +195,21 @@ int main (int argc, char *argv[])
 
     //TESTING MODEL:
 
-    for(int i = 0; i < 20; i++)
+    for(int i = 0; i < 10; i++)
     {
-        vector<double> out = cnn.forward(test[i]);
-        cout << "Estimation: " << endl;
-        for(int i = 0; i < out.size(); i++)
+        vector<double> out = cnn.forward(input[i]);
+        for(int x = 0; x < input[i].size(); x++)
         {
-            cout << i+1 << ": " << out[i] << "%" << endl;
+            cout << +input[i][x] << " ";
+            if(x % 28 == 0)
+            {
+                cout << endl;
+            }
+        }
+        cout << "Estimation: " << endl;
+        for(int a = 0; a < out.size(); a++)
+        {
+            cout << a << ": " << out[a] << "%" << endl;
         }
 
         cout << "actual: " << +test_labels[i] << endl;
