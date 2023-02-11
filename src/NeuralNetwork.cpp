@@ -22,6 +22,7 @@ int *biases_per_layer;
 int *neuron_acc;
 int *weight_acc;
 int *bias_acc;
+vector<double> wtsdbg;
 
 int stringActivationToIntActivation(string activation_function)
 {
@@ -83,7 +84,8 @@ void NeuralNetwork::initialize()
             }
             else
             {
-                /* output_size = get<PoolingLayer*>(layers[i+1])->getIn(); */
+                act_function = 0;
+                output_size = get<PoolingLayer*>(layers[i+1])->getIn();
             }
         }
         int layerType = 2; //input - 0, output - 1, hidden - 2
@@ -100,6 +102,7 @@ void NeuralNetwork::initialize()
         }
         else
         {
+            get<PoolingLayer*>(layers[i])->init(layerType, i, act_function);
         }
     }
     int total_neurons = 0;
@@ -174,9 +177,13 @@ vector<double> NeuralNetwork::forward(vector<double> input)
         {
             get<DenseLayer*>(this->layers[i])->forward();
         }
-        if(holds_alternative<ConvolutionalLayer*>(this->layers[i]))
+        else if(holds_alternative<ConvolutionalLayer*>(this->layers[i]))
         {
             get<ConvolutionalLayer*>(this->layers[i])->forward();
+        }
+        else
+        {
+            get<PoolingLayer*>(this->layers[i])->forward();
         }
     }
 
@@ -201,6 +208,10 @@ void NeuralNetwork::backward(vector<double> errors)
         {
             get<ConvolutionalLayer*>(this->layers[i])->backward();
         }
+        else
+        {
+            get<PoolingLayer*>(this->layers[i])->backward();
+        }
     }
 }
 
@@ -212,9 +223,15 @@ void NeuralNetwork::update()
         {
             get<DenseLayer*>(this->layers[i])->update();
         }
+        if(holds_alternative<ConvolutionalLayer*>(this->layers[i]))
+        {
+            //RUNNING UPDATE ON CONV LAYER DOES NOT WORK. THIS MEANS
+            //THERE COULD BE PROBLEM WITH BACKWARDS AND/OR UPDATE LAYER
+            get<ConvolutionalLayer*>(this->layers[i])->update();
+        }
     }
 
-    epoch++;
+    if(epoch < INT32_MAX)epoch++;
 }
 
 int NeuralNetwork::get_seed()

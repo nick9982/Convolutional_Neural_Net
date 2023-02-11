@@ -111,8 +111,10 @@ int main (int argc, char *argv[])
         new ConvolutionalLayer({7, 7, 8}, {2, 2, 1, 1}, 2, "ReLU", "HeRandom"),
         new DenseLayer(576, "ReLU", "HeRandom"),
         new DenseLayer(10, "Softmax", ""),
-        103
+        100
     );
+    test_conv();
+    exit(0);
     vector<vector<double>> input(number_of_images_train, vector<double>(image_size_train));
     
     for(int i = 0; i < number_of_images_train; i++)
@@ -140,54 +142,76 @@ int main (int argc, char *argv[])
     cout << "Training started: " << endl;
 
     vector<double> error(10);
+    string output = "";
     auto start = chrono::_V2::high_resolution_clock::now();
-    for(int i = 0; i < input.size(); i++)
+    for(int x = 0; x < 8; x++)
     {
-        vector<double> out = cnn.forward(input[i]);
-        switch(train_labels[i])
+        cout << "epoch [" << x+1 << "/8]" << endl;
+        for(int i = 0; i < input.size(); i++)
         {
-            case 0:
-                error = {1, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-                break;
-            case 1:
-                error = {0, 1, 0, 0, 0, 0, 0, 0, 0, 0};
-                break;
-            case 2:
-                error = {0, 0, 1, 0, 0, 0, 0, 0, 0, 0};
-                break;
-            case 3:
-                error = {0, 0, 0, 1, 0, 0, 0, 0, 0, 0};
-                break;
-            case 4:
-                error = {0, 0, 0, 0, 1, 0, 0, 0, 0, 0};
-                break;
-            case 5:
-                error = {0, 0, 0, 0, 0, 1, 0, 0, 0, 0};
-                break;
-            case 6:
-                error = {0, 0, 0, 0, 0, 0, 1, 0, 0, 0};
-                break;
-            case 7:
-                error = {0, 0, 0, 0, 0, 0, 0, 1, 0, 0};
-                break;
-            case 8:
-                error = {0, 0, 0, 0, 0, 0, 0, 0, 1, 0};
-                break;
-            case 9:
-                error = {0, 0, 0, 0, 0, 0, 0, 0, 0, 1};
-                break;
-        }
-        if(i % 2500 == 0)
-        {
-            cout << "At point " << i << "/60000 the output is" << endl;
-            cout << "actual: " << +train_labels[i] << endl;
+            vector<double> out = cnn.forward(input[i]);
             for(int x = 0; x < out.size(); x++)
             {
-                cout << x << ": " << out[x]*100 << "%" << endl;
+                cout << out[x] << endl;
             }
+            switch(train_labels[i])
+            {
+                case 0:
+                    error = {1, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+                    break;
+                case 1:
+                    error = {0, 1, 0, 0, 0, 0, 0, 0, 0, 0};
+                    break;
+                case 2:
+                    error = {0, 0, 1, 0, 0, 0, 0, 0, 0, 0};
+                    break;
+                case 3:
+                    error = {0, 0, 0, 1, 0, 0, 0, 0, 0, 0};
+                    break;
+                case 4:
+                    error = {0, 0, 0, 0, 1, 0, 0, 0, 0, 0};
+                    break;
+                case 5:
+                    error = {0, 0, 0, 0, 0, 1, 0, 0, 0, 0};
+                    break;
+                case 6:
+                    error = {0, 0, 0, 0, 0, 0, 1, 0, 0, 0};
+                    break;
+                case 7:
+                    error = {0, 0, 0, 0, 0, 0, 0, 1, 0, 0};
+                    break;
+                case 8:
+                    error = {0, 0, 0, 0, 0, 0, 0, 0, 1, 0};
+                    break;
+                case 9:
+                    error = {0, 0, 0, 0, 0, 0, 0, 0, 0, 1};
+                    break;
+            }
+            if(i % 2000 == 0)
+            {
+                cout << "=";
+            }
+            cnn.backward(error);
+            cnn.update();
+            /* exit(0); */
+            /* if(i == input.size()-1) */
+            /* { */
+            /*     for(int e = 0; e < out.size(); e++) */
+            /*     { */
+            /*         output += to_string(e) + ": " + to_string(out[e]) + "\n"; */
+            /*     } */
+            /*     output += "actual: " + to_string(train_labels[i]) + "\n"; */
+            /* } */
+            exit(0);
         }
-        cnn.backward(error);
-        cnn.update();
+        cout << ">" << endl << output;
+        cout << "seed: " << cnn.get_seed() << endl;
+        //0 seed needs to be  debugged
+        //actually... after long training sessions with several epochs,
+        //there is a number that becomes unrepresentable and thus inf or -inf 
+        //Obviously thus making all the values in the network NAN.
+        output = "";
+        
     }
     auto stop = chrono::_V2::high_resolution_clock::now();
     auto duration = chrono::duration_cast<chrono::microseconds>(stop-start);
@@ -209,7 +233,7 @@ int main (int argc, char *argv[])
         cout << "Estimation: " << endl;
         for(int a = 0; a < out.size(); a++)
         {
-            cout << a << ": " << out[a] << "%" << endl;
+            cout << a << ": " << out[a]*100 << "%" << endl;
         }
 
         cout << "actual: " << +test_labels[i] << endl;

@@ -37,9 +37,18 @@ double* SoftMax(double *input, int size)
     {
         /* cout << "inp: " << input[i] << endl; */
         /* cout << "exp(^): " << exp(input[i]) << endl; */
+        if(isnan(input[i]) || isinf(input[i]))
+        {
+            for(int w = 0; w < size; w++)
+            {
+                cout << "err: " << input[w] << endl;
+            }
+            exit(0);
+        }
         input[i] = exp(input[i]);
         sum += input[i];
     }
+    sum += 1e-201;
 
     for(int i = 0; i < size; i++)
     {
@@ -56,6 +65,7 @@ double* SoftMaxDerivative(double* input, int size)
         input[i] = exp(input[i]);
         sum += input[i];
     }
+    sum += 1e-201;
 
     for(int i = 0; i < size; i++)
     {

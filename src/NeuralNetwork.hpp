@@ -26,6 +26,7 @@ extern int *biases_per_layer;
 extern int *neuron_acc;
 extern int *weight_acc;
 extern int *bias_acc;
+extern vector<double> wtsdbg;
 
 class Initializer
 {
@@ -87,8 +88,15 @@ class ConvolutionalLayer
 class PoolingLayer
 {
     private:
+        int x, y, input_channels, kernel_x, kernel_y, stride_x, stride_y, layerType, idx, out_x, out_y, poolType;
+        int *idx_cache;
+        double (*act_function)(double);
     public:
-        PoolingLayer();
+        PoolingLayer(vector<int>, vector<int>, string);
+        void init(int, int, int);
+        void forward();
+        void backward();
+        int getIn();
 };
 
 class Flatten

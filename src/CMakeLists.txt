@@ -5,6 +5,7 @@ set(CMAKE_C_STANDARD 99)
 set(This cnn)
 
 set(CMAKE_CXX_FLAGS "-Wall -Wextra -g")
+# set(CMAKE_CXX_FLAGS "-O3")
 
 project(${This} CXX C)
 
