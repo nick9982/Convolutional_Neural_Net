@@ -105,16 +105,18 @@ int main (int argc, char *argv[])
     uchar* train_labels = labelDataset("../src/data/train-labels-idx1-ubyte", number_of_labels_train);
     /* cout << "train_num: " << image_size_train << endl; */
     /* cout << "test_num: " << image_size_test << endl; */
+    /* learnPowerConsumption(true, false); */
+    /* exit(0); */
     NeuralNetwork cnn(
-        new ConvolutionalLayer({28, 28, 1}, {3, 3, 2, 2}, 4, "Linear", "HeRandom"),
-        new ConvolutionalLayer({14, 14, 4}, {3, 3, 2, 2}, 2, "ReLU", "HeRandom"),
-        new ConvolutionalLayer({7, 7, 8}, {2, 2, 1, 1}, 2, "ReLU", "HeRandom"),
+        new ConvolutionalLayer({28, 28, 1}, {3, 3, 2, 2}, 4, "Linear", "HeRandom", {0,0}, false),
+        new ConvolutionalLayer({14, 14, 4}, {3, 3, 2, 2}, 2, "ReLU", "HeRandom", {0,0}, false),
+        new ConvolutionalLayer({7, 7, 8}, {2, 2, 1, 1}, 2, "ReLU", "HeRandom", {0,0}, false),
         new DenseLayer(576, "ReLU", "HeRandom"),
         new DenseLayer(10, "Softmax", ""),
         100
     );
-    test_conv();
-    exit(0);
+    /* test_conv(); */
+    /* exit(0); */
     vector<vector<double>> input(number_of_images_train, vector<double>(image_size_train));
     
     for(int i = 0; i < number_of_images_train; i++)
@@ -150,9 +152,9 @@ int main (int argc, char *argv[])
         for(int i = 0; i < input.size(); i++)
         {
             vector<double> out = cnn.forward(input[i]);
-            for(int x = 0; x < out.size(); x++)
+            for(int e = 0; e < out.size(); e++)
             {
-                cout << out[x] << endl;
+                cout << out[e] << endl;
             }
             switch(train_labels[i])
             {
@@ -189,29 +191,27 @@ int main (int argc, char *argv[])
             }
             if(i % 2000 == 0)
             {
-                cout << "=";
+                /* cout << "="; */
             }
             cnn.backward(error);
             cnn.update();
-            /* exit(0); */
-            /* if(i == input.size()-1) */
-            /* { */
-            /*     for(int e = 0; e < out.size(); e++) */
-            /*     { */
-            /*         output += to_string(e) + ": " + to_string(out[e]) + "\n"; */
-            /*     } */
-            /*     output += "actual: " + to_string(train_labels[i]) + "\n"; */
-            /* } */
             exit(0);
+            if(i == input.size()-1)
+            {
+                for(int e = 0; e < out.size(); e++)
+                {
+                    output += to_string(e) + ": " + to_string(out[e]) + "\n";
+                }
+                output += "actual: " + to_string(train_labels[i]) + "\n";
+            }
         }
         cout << ">" << endl << output;
         cout << "seed: " << cnn.get_seed() << endl;
         //0 seed needs to be  debugged
         //actually... after long training sessions with several epochs,
         //there is a number that becomes unrepresentable and thus inf or -inf 
-        //Obviously thus making all the values in the network NAN.
+        //Obviously making all the values in the network NAN.
         output = "";
-        
     }
     auto stop = chrono::_V2::high_resolution_clock::now();
     auto duration = chrono::duration_cast<chrono::microseconds>(stop-start);
