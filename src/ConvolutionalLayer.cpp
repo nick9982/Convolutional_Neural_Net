@@ -104,7 +104,6 @@ void ConvolutionalLayer::forward()
     int out = nStart_next;
     int biasCnt = bias_acc[this->idx];
     int wt_dim = this->kernel_x*this->kernel_y;
-    /* int op_cnt = 0; */
     for(int i = 0; i < this->input_channels; i++)
     {
         chandn += CHAN_SIZE_N;
@@ -131,25 +130,16 @@ void ConvolutionalLayer::forward()
                         {
                             if(y+m >= this->y) break;
                             sum += neuron_value[offsx+y] * weight[xdx+y];
-                            /* op_cnt++; */
-                            /* if(this->idx == 1) */
-                            /* { */
-                                /* string link = to_string(offsx+y) + ", " + to_string(xdx+y) + ", " + to_string(out); */
-                                /* string link = to_string(offsx+y) + ", " + to_string(xdx+y); */
-                                /* links.push_back(link); */
-                            /* } */
                         }
                     }
                     if(this->hasBias) sum += bias[biasCnt];
                     neuron_value[out] = this->act_function(sum);
-                    /* if(this->idx == 1)cout << "out: " << out << endl; */
                     cache_value[out++] = sum;
                 }
             }
             ++biasCnt;
         }
     }
-    /* if(this->idx == 1)cout << "cnt_fowrard: " << op_cnt << endl; */
 }
 
 vector<string> linksback;
@@ -165,7 +155,6 @@ void ConvolutionalLayer::backward()
     int out = neuron_acc[this->idx+1] - outchan_relative_size;
     int krnl_size = this->kernel_x*this->kernel_y;
     int mulp = this->kernel_y*this->stride_x;
-    /* int cnt = 0; */
     for(int i = 0; i < this->input_channels; i++)
     {
         chandn += CHAN_SIZE_N;
@@ -189,13 +178,10 @@ void ConvolutionalLayer::backward()
                 double neuron_derivative = this->act_function_derivative(cache_value[jdx+k]);
                 double sum = 0;
                 int mdx_w = chandw-krnl_size;
-                /* if(this->idx == 1) cout << "neur: " << str_y << endl; */
                 for(int m = 0; m < this->new_kernels; m++)
                 {
                     mdx_w += krnl_size;
                     mdx += OUT_SIZE;
-                    /* if(this->idx == 1) cout << "mdx: " << mdx << endl; */
-                    /* if(this->idx == 1)cout << "mdx: " << mdx << endl; */
                     int xdx = str_y + this->out_per_wt_y;
                     int xdx_w = mdx_w + wt_start - mulp;
                     for(int x = x_mod; x < this->kernel_x; x+=this->stride_x)
@@ -207,19 +193,7 @@ void ConvolutionalLayer::backward()
                         for(int y = y_mod; y < this->kernel_y; y+=this->stride_y)
                         {
                             if(k-y < 0) break;
-                            /* if(this->idx == 1 && j == 0 && k == 0 && i == 0) cout << "wt: " << xdx_w + y << endl; */
-                            /* if(this->idx == 1)cout << "ph" << endl; */
-                            /* if(this->idx == 1 && xdx_w+y == 36) cout <<"neuron: " << jdx+k << endl; */
                             sum += delta_value[mdx+ydx--] * weight[xdx_w+y] * neuron_derivative;
-                            /* if(this->idx == 1) cout << "str_y: " << xdx_w+y << ", x:" << j << ", y: " << k << endl; */
-                            /* if(this->idx == 1) */
-                            /* { */
-                                /* string link = to_string(jdx+k) + ", " + to_string(xdx_w+y) + ", " + to_string(mdx+ydx+1); */
-                                /* string link = to_string(jdx+k) + ", " + to_string(xdx_w+y); */
-                                /* linksback.push_back(link); */
-                            /* } */
-
-                            /* cnt++; */
                         }
                     }
                 }
@@ -227,19 +201,9 @@ void ConvolutionalLayer::backward()
             }
         }
     }
-    /* if(this->idx == 1) cout << weight_acc[this->idx] << ", " << weight_acc[this->idx+1] << ", " << weight_acc[this->idx+2] << endl;  */
-    /* if(this->idx == 1) cout << neuron_acc[this->idx] << ", " << neuron_acc[this->idx+1] << ", " << neuron_acc[this->idx+2] << endl;  */
-    /* if(this->idx == 1) cout << "cnt: " << cnt << endl; */
 }
 
 
-//There are multiple inp neuron X output neuron combinations for each weight.
-//The gradient for each weight is the sum of the gradient of these combinations.
-//What we really are doing here is cycling through each weight and idxing each
-//respective pair of input neuron X output neuron.
-//i.e. inp neur = neuron_value[nStart + a] * delta_value[nStart_next + x];
-//sum those up for each weight then update.
-vector<string> linksupdate;
 void ConvolutionalLayer::update()
 {
     int nStart = neuron_acc[this->idx];
@@ -249,7 +213,6 @@ void ConvolutionalLayer::update()
     int mulp = this->y*this->stride_x;
     int outn_size = this->out_per_wt_x*this->out_per_wt_y;
     int chandn = nStart - CHAN_SIZE_N, chandw = wStart-CHAN_SIZE_W, outn = neuron_acc[this->idx+1];
-    int cnt = 0;
     for(int i = 0; i < this->input_channels; i++)
     {
         chandw += CHAN_SIZE_W;
@@ -267,8 +230,6 @@ void ConvolutionalLayer::update()
                 for(int m = 0; m < this->kernel_y; m++)
                 {
                     double gradient = 0;
-                    //weight: kdx+m
-                    /* if(this->idx==1)cout << "weight: " << kdx+m << endl; */
                     int xdx = chandn - mulp + neur_disp;
                     int xdx_out = outn-this->out_per_wt_y;
                     for(int x = k; x < this->x; x+=this->stride_x)
@@ -278,16 +239,8 @@ void ConvolutionalLayer::update()
                         int ydx_out = xdx_out;
                         for(int y = m; y < this->y; y+=this->stride_y)
                         {
-                            //Neuron: xdx+y
-                            /* if(this->idx == 1)cout << "mulp: " << xdx+y << endl; */
                             delta_sum += delta_value[ydx_out];
                             gradient += delta_value[ydx_out++] * neuron_value[xdx+y];
-                            /* if(this->idx == 1) */
-                            /* { */
-                            /*     string link = to_string(xdx+y) + ", " + to_string(kdx+m) + ", " + to_string(ydx_out-1); */
-                            /*     linksupdate.push_back(link); */
-                            /* } */
-                            cnt++;
                         }
                     }
                     int w = kdx+m;
@@ -295,7 +248,7 @@ void ConvolutionalLayer::update()
                     wv[w] = beta2 * wv[w] + (1 - beta2) * pow(gradient, 2);
                     double mhat = wm[w] / (1-pow(beta1, epoch));
                     double vhat = wv[w] / (1-pow(beta2, epoch));
-                    weight[w] -= learningRate * gradient;
+                    weight[w] -= (learningRate / (sqrt(vhat + 1e-8)) * mhat) * gradient;
                 }
             }
             if(this->hasBias)
@@ -310,63 +263,6 @@ void ConvolutionalLayer::update()
             outn+=outn_size;
         }
     }
-
-    /* if(this->idx == 1) cout << "cnt: " << cnt << endl; */
-    /* if(this->idx==1)cout << neuron_acc[this->idx] << ", " << neuron_acc[this->idx+1] << ", " << neuron_acc[this->idx+2] << endl; */
-    /* if(this->idx==1)cout << weight_acc[this->idx] << ", " << weight_acc[this->idx+1] << ", " << weight_acc[this->idx+2] << endl; */
-    /* if(this->idx==1)check_vectors(); */
-}
-
-void check_vectors()
-{
-    int total_correct = 0;
-    for(int i = 0; i < links.size(); i++)
-    {
-        for(int j = 0; j < linksback.size(); j++)
-        {
-            if(links[i] == linksback[j])
-            {
-                total_correct++;
-                break;
-            }
-        }
-    }
-    double avg = (double)total_correct/(double)links.size() * 100;
-    cout << "backward acc: " << to_string(avg) << "%" << endl;
-    
-    total_correct = 0;
-    for(int i = 0; i < links.size(); i++)
-    {
-        for(int j = 0; j < linksupdate.size(); j++)
-        {
-            if(links[i] == linksupdate[j])
-            {
-                total_correct++;
-                break;
-            }
-        }
-    }
-    avg = (double)total_correct/(double)links.size() * 100;
-    cout << "update acc: " << to_string(avg) << "%" << endl;
-
-    total_correct = 0;
-    for(int i = 0; i < linksback.size(); i++)
-    {
-        for(int j = 0; j < linksupdate.size(); j++)
-        {
-            if(linksupdate[i] == linksback[j])
-            {
-                total_correct++;
-                break;
-            }
-        }
-    }
-    avg = (double)total_correct/(double)links.size() * 100;
-    cout << "back/update acc: " << to_string(avg) << "%" << endl;
-
-    cout << "front size: " << links.size() << endl;
-    cout << "back size: " << linksback.size() << endl;
-    cout << "update size: " << linksupdate.size() << endl;
 }
 
 int ConvolutionalLayer::getIn()

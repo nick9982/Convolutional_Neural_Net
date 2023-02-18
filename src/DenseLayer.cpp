@@ -143,7 +143,6 @@ void DenseLayer::forward_soft()
     int nStart_next = neuron_acc[this->idx+1];
 
     double* output_cache = new double[this->out];
-    vector<double> sums;
 
     for(int i = 0; i < this->out; i++)
     {
@@ -152,21 +151,9 @@ void DenseLayer::forward_soft()
         for(int j = 0; j < this->in; j++)
         {
             jdx += this->out;
-            /* if(i == 0)cout << "eq(wt * neur): " << weight[jdx+i] << " * " << neuron_value[nStart + j] << endl; */
             sum += neuron_value[nStart+j]*weight[jdx+i];
-            sums.push_back(weight[jdx+i]);
-            /* if(i == 0) cout << sum << endl; */
         }
         if(this->hasBias) sum+=bias[bStart];
-        if(isnan(sum))
-        {
-            for(int i = 0; i < resUpdate.size(); i++)
-            {
-                /* cout << "denseForward" << resUpdate[i] << endl; */
-            }
-            /* exit(0); */
-        }
-        resUpdate.clear();
         cache_value[nStart_next+i] = sum;
         output_cache[i] = sum;
     }
@@ -199,14 +186,12 @@ void DenseLayer::firstDeltas_soft(vector<double> errors)
     for(int i = 0; i < this->in; i++)
     {
         cache[i] = cache_value[nStart+i];
-        resUpdate.push_back(cache[i]);
     }
     cache = this->softmax_derivative(cache, this->in);//fix before run!
 
     for(int i = 0; i < this->in; i++)
     {
         delta_value[nStart+i] = (neuron_value[nStart+i] - errors[i]) * cache[i];
-        resUpdate.push_back(cache[i]);
     }
 }
 
