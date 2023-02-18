@@ -8,6 +8,7 @@
 void print_images(uchar**, int, int);
 void learnPowerConsumption(bool, bool, int=0);
 void test_network();
+bool should_print = false;
 //OK we are going to recreate a faster dense network.
 //We will elminate complex classes for neurons class
 //We will use instead multiple arrays of data.
@@ -111,10 +112,12 @@ int main (int argc, char *argv[])
         new ConvolutionalLayer({28, 28, 1}, {3, 3, 2, 2}, 4, "Linear", "HeRandom", {0,0}, false),
         new ConvolutionalLayer({14, 14, 4}, {3, 3, 2, 2}, 2, "ReLU", "HeRandom", {0,0}, false),
         new ConvolutionalLayer({7, 7, 8}, {2, 2, 1, 1}, 2, "ReLU", "HeRandom", {0,0}, false),
-        new DenseLayer(576, "ReLU", "HeRandom"),
+        new DenseLayer(576, "Linear", "HeRandom"),
         new DenseLayer(10, "Softmax", ""),
         100
     );
+
+    mnist_entropy_loss entropy_loss;
     /* test_conv(); */
     /* exit(0); */
     vector<vector<double>> input(number_of_images_train, vector<double>(image_size_train));
@@ -152,42 +155,20 @@ int main (int argc, char *argv[])
         for(int i = 0; i < input.size(); i++)
         {
             vector<double> out = cnn.forward(input[i]);
-            for(int e = 0; e < out.size(); e++)
+            /* for(int e = 0; e < out.size(); e++) */
+            /* { */
+            /*     cout << out[e] << endl; */
+            /* } */
+            double *outp = new double[out.size()];
+            for(int r = 0; r < out.size(); r++)
             {
-                cout << out[e] << endl;
+                outp[r] = out[r];
             }
-            switch(train_labels[i])
+            outp = entropy_loss.calculate(outp, train_labels[i]);
+            for(int r = 0; r < out.size(); r++)
             {
-                case 0:
-                    error = {1, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-                    break;
-                case 1:
-                    error = {0, 1, 0, 0, 0, 0, 0, 0, 0, 0};
-                    break;
-                case 2:
-                    error = {0, 0, 1, 0, 0, 0, 0, 0, 0, 0};
-                    break;
-                case 3:
-                    error = {0, 0, 0, 1, 0, 0, 0, 0, 0, 0};
-                    break;
-                case 4:
-                    error = {0, 0, 0, 0, 1, 0, 0, 0, 0, 0};
-                    break;
-                case 5:
-                    error = {0, 0, 0, 0, 0, 1, 0, 0, 0, 0};
-                    break;
-                case 6:
-                    error = {0, 0, 0, 0, 0, 0, 1, 0, 0, 0};
-                    break;
-                case 7:
-                    error = {0, 0, 0, 0, 0, 0, 0, 1, 0, 0};
-                    break;
-                case 8:
-                    error = {0, 0, 0, 0, 0, 0, 0, 0, 1, 0};
-                    break;
-                case 9:
-                    error = {0, 0, 0, 0, 0, 0, 0, 0, 0, 1};
-                    break;
+                /* cout << outp[r] << endl; */
+                error[r] = outp[r];
             }
             if(i % 2000 == 0)
             {
@@ -195,7 +176,7 @@ int main (int argc, char *argv[])
             }
             cnn.backward(error);
             cnn.update();
-            exit(0);
+            /* exit(0); */
             if(i == input.size()-1)
             {
                 for(int e = 0; e < out.size(); e++)
@@ -203,6 +184,11 @@ int main (int argc, char *argv[])
                     output += to_string(e) + ": " + to_string(out[e]) + "\n";
                 }
                 output += "actual: " + to_string(train_labels[i]) + "\n";
+                should_print = false;
+            }
+            if(i == input.size()-2)
+            {
+                should_print = true;
             }
         }
         cout << ">" << endl << output;

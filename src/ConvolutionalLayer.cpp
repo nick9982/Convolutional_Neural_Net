@@ -207,7 +207,7 @@ void ConvolutionalLayer::backward()
                         for(int y = y_mod; y < this->kernel_y; y+=this->stride_y)
                         {
                             if(k-y < 0) break;
-                            if(this->idx == 1 && j == 0 && k == 0 && i == 0) cout << "wt: " << xdx_w + y << endl;
+                            /* if(this->idx == 1 && j == 0 && k == 0 && i == 0) cout << "wt: " << xdx_w + y << endl; */
                             /* if(this->idx == 1)cout << "ph" << endl; */
                             /* if(this->idx == 1 && xdx_w+y == 36) cout <<"neuron: " << jdx+k << endl; */
                             sum += delta_value[mdx+ydx--] * weight[xdx_w+y] * neuron_derivative;
@@ -227,8 +227,8 @@ void ConvolutionalLayer::backward()
             }
         }
     }
-    if(this->idx == 1) cout << weight_acc[this->idx] << ", " << weight_acc[this->idx+1] << ", " << weight_acc[this->idx+2] << endl; 
-    if(this->idx == 1) cout << neuron_acc[this->idx] << ", " << neuron_acc[this->idx+1] << ", " << neuron_acc[this->idx+2] << endl; 
+    /* if(this->idx == 1) cout << weight_acc[this->idx] << ", " << weight_acc[this->idx+1] << ", " << weight_acc[this->idx+2] << endl;  */
+    /* if(this->idx == 1) cout << neuron_acc[this->idx] << ", " << neuron_acc[this->idx+1] << ", " << neuron_acc[this->idx+2] << endl;  */
     /* if(this->idx == 1) cout << "cnt: " << cnt << endl; */
 }
 

@@ -26,6 +26,8 @@ extern int *biases_per_layer;
 extern int *neuron_acc;
 extern int *weight_acc;
 extern int *bias_acc;
+extern int selected_idx;
+extern bool should_print;
 extern vector<double> wtsdbg;
 
 class Initializer

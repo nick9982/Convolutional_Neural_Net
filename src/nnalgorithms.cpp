@@ -1,5 +1,6 @@
 #include "nnalgorithms.hpp"
 #include "NeuralNetwork.hpp"
+#include <algorithm>
 
 double randomDoubleDistribution(double hi)
 {
@@ -33,18 +34,20 @@ double LinearDerivative(double input)
 double* SoftMax(double *input, int size)
 {
     double sum = 0;
+    if(should_print)
+    {
+        cout << "table:" << endl;
+        for(int w = 0; w < size; w++)
+        {
+            cout << "input[" << w << "]: " << input[w] << endl;
+        }
+    }
     for(int i = 0; i < size; i++)
     {
         /* cout << "inp: " << input[i] << endl; */
         /* cout << "exp(^): " << exp(input[i]) << endl; */
-        if(isnan(input[i]) || isinf(input[i]))
-        {
-            for(int w = 0; w < size; w++)
-            {
-                cout << "err: " << input[w] << endl;
-            }
-            exit(0);
-        }
+        if(input[i] < -300) input[i] = -300;
+        if(input[i] > 300) input[i] = 300;
         input[i] = exp(input[i]);
         sum += input[i];
     }
@@ -53,6 +56,14 @@ double* SoftMax(double *input, int size)
     for(int i = 0; i < size; i++)
     {
         input[i] = input[i]/sum;
+    }
+    if(should_print)
+    {
+        for(int w = 0; w < size; w++)
+        {
+            cout << "output[" << w << "]: "  << input[w] << endl;
+        }
+        
     }
     return input;
 }

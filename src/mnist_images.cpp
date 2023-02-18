@@ -1,5 +1,6 @@
 #include "mnist_images.hpp"
 
+int selected_idx;
 int reverseInt(int code)
 {
     unsigned char c1, c2, c3, c4;
@@ -57,4 +58,20 @@ uchar* labelDataset(string full_path, int& number_of_labels)
     uchar* dataset = new uchar[number_of_labels];
     file.read((char *) dataset, number_of_labels);
     return dataset;
+}
+
+mnist_entropy_loss::mnist_entropy_loss(){}
+
+double *mnist_entropy_loss::calculate(double *input, char label)
+{
+    vector<double> actual = this->dist[label];
+    double* res = new double[10];
+    for(int i = 0; i < 10; i++)
+    {
+        pred[i] = -(actual[i] * log(input[i]));
+        res[i] = 0;
+        if(actual[i] == 1) res[i] += 1; 
+    }
+
+    return res;
 }

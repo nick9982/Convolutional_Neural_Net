@@ -15,6 +15,7 @@ DenseLayer::DenseLayer(int nodes, string activation, string initialization, bool
             break;
         case 2:
             this->softmax_derivative = SoftMaxDerivative;
+            break;
         default:
             this->act_function_derivative = LinearDerivative;
             break;
@@ -48,6 +49,7 @@ void DenseLayer::init(int output, int layerType, int idx, int next_layer_act)
             break;
         case 2:
             this->softmax = SoftMax;
+            break;
         default:
             this->act_function = Linear;
             break;
@@ -124,9 +126,9 @@ void DenseLayer::forward()
         {
             for(int i = 0; i < wtsdbg.size(); i++)
             {
-                cout << "denseForward3" << wtsdbg[i] << endl;
+                /* cout << "denseForward3" << wtsdbg[i] << endl; */
             }
-            exit(0);
+            /* exit(0); */
         }
         neuron_value[nStart_next+i] = this->act_function(sum);
         cache_value[nStart_next+i] = sum;
@@ -160,9 +162,9 @@ void DenseLayer::forward_soft()
         {
             for(int i = 0; i < resUpdate.size(); i++)
             {
-                cout << "denseForward" << resUpdate[i] << endl;
+                /* cout << "denseForward" << resUpdate[i] << endl; */
             }
-            exit(0);
+            /* exit(0); */
         }
         resUpdate.clear();
         cache_value[nStart_next+i] = sum;
@@ -199,7 +201,7 @@ void DenseLayer::firstDeltas_soft(vector<double> errors)
         cache[i] = cache_value[nStart+i];
         resUpdate.push_back(cache[i]);
     }
-    cache = this->softmax_derivative(cache, this->in);
+    cache = this->softmax_derivative(cache, this->in);//fix before run!
 
     for(int i = 0; i < this->in; i++)
     {
