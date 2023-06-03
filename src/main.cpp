@@ -110,8 +110,8 @@ int main (int argc, char *argv[])
     /* exit(0); */
     NeuralNetwork cnn(
         new ConvolutionalLayer({28, 28, 1}, {3, 3, 2, 2}, 4, "Linear", "HeRandom", {0,0}, false),
-        new ConvolutionalLayer({14, 14, 4}, {3, 3, 2, 2}, 2, "Linear", "HeRandom", {0,0}, false),
-        new ConvolutionalLayer({7, 7, 8}, {2, 2, 1, 1}, 2, "Linear", "HeRandom", {0,0}, false),
+        new ConvolutionalLayer({14, 14, 4}, {3, 3, 2, 2}, 2, "ReLU", "HeRandom", {0,0}, false),
+        new ConvolutionalLayer({7, 7, 8}, {2, 2, 1, 1}, 2, "ReLU", "HeRandom", {0,0}, false),
         new DenseLayer(576, "Linear", "HeRandom"),
         new DenseLayer(10, "Softmax", ""),
         100
@@ -177,7 +177,8 @@ int main (int argc, char *argv[])
             cnn.backward(error);
             cnn.update();
             /* exit(0); */
-            if(i == input.size()-1)
+            //if(i == input.size()-1)
+            if(true)
             {
                 for(int e = 0; e < out.size(); e++)
                 {
@@ -185,13 +186,15 @@ int main (int argc, char *argv[])
                 }
                 output += "actual: " + to_string(train_labels[i]) + "\n";
                 should_print = false;
+                cout << output << endl;
             }
             if(i == input.size()-2)
             {
                 should_print = true;
             }
+            //exit(0);
         }
-        cout << ">" << endl << output;
+        //cout << ">" << endl << output;
         cout << "seed: " << cnn.get_seed() << endl;
         //0 seed needs to be  debugged
         //actually... after long training sessions with several epochs,

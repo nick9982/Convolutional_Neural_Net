@@ -227,7 +227,7 @@ void NeuralNetwork::update()
         {
             //RUNNING UPDATE ON CONV LAYER DOES NOT WORK. THIS MEANS
             //THERE COULD BE PROBLEM WITH BACKWARDS AND/OR UPDATE LAYER
-            /* get<ConvolutionalLayer*>(this->layers[i])->update(); */
+            get<ConvolutionalLayer*>(this->layers[i])->update();
         }
     }
 

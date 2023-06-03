@@ -130,6 +130,7 @@ void ConvolutionalLayer::forward()
                         {
                             if(y+m >= this->y) break;
                             sum += neuron_value[offsx+y] * weight[xdx+y];
+                            //if(this->idx == 1) links.push_back(to_string(offsx+y) + ", " + to_string(xdx+y) + ", " + to_string(out));
                         }
                     }
                     if(this->hasBias) sum += bias[biasCnt];
@@ -194,6 +195,7 @@ void ConvolutionalLayer::backward()
                         {
                             if(k-y < 0) break;
                             sum += delta_value[mdx+ydx--] * weight[xdx_w+y] * neuron_derivative;
+                            //if(this->idx == 1) linksback.push_back(to_string(jdx+k) + ", " + to_string(xdx_w+y) + ", " + to_string(mdx+ydx+1));
                         }
                     }
                 }
@@ -203,7 +205,8 @@ void ConvolutionalLayer::backward()
     }
 }
 
-
+void print_links();
+vector<string> linksupdate;
 void ConvolutionalLayer::update()
 {
     int nStart = neuron_acc[this->idx];
@@ -241,6 +244,7 @@ void ConvolutionalLayer::update()
                         {
                             delta_sum += delta_value[ydx_out];
                             gradient += delta_value[ydx_out++] * neuron_value[xdx+y];
+                            //if(this->idx == 1) linksupdate.push_back(to_string(xdx+y) + ", " + to_string(kdx+m) + ", " + to_string(ydx_out-1));
                         }
                     }
                     int w = kdx+m;
@@ -249,6 +253,11 @@ void ConvolutionalLayer::update()
                     double mhat = wm[w] / (1-pow(beta1, epoch));
                     double vhat = wv[w] / (1-pow(beta2, epoch));
                     weight[w] -= (learningRate / (sqrt(vhat + 1e-8)) * mhat) * gradient;
+                    if(isnan(weight[w]))
+                    {
+                        cout << "location: update() line 250ish, idx: " << this->idx << endl;
+                        exit(0);
+                    }
                 }
             }
             if(this->hasBias)
@@ -263,6 +272,51 @@ void ConvolutionalLayer::update()
             outn+=outn_size;
         }
     }
+    //if(this->idx == 1) print_links();
+}
+
+void print_links()
+{
+    cout << "forward vs backward: " << endl;
+    int cnt = 0;
+    for(int i = 0; i < links.size(); i++)
+    {
+        for(int j = 0; j < linksback.size(); j++)
+        {
+            if(links[i] == linksback[j])
+            {
+                cnt++;
+            }
+        }
+    }
+    if(links.size() != 0)cout << (double)cnt/links.size() << endl;
+    cout << "forward vs update: " << endl;
+    cnt = 0;
+    for(int i = 0; i < links.size(); i++)
+    {
+        for(int j = 0; j < linksupdate.size(); j++)
+        {
+            if(links[i] == linksupdate[j])
+            {
+                cnt++;
+            }
+        }
+    }
+    if(links.size() != 0)cout << (double)cnt/links.size() << endl;
+    cout << "backward vs update:" << endl;
+    cnt = 0;
+    for(int i = 0; i < linksback.size(); i++)
+    {
+        for(int j = 0; j < linksupdate.size(); j++)
+        {
+            if(linksback[i] == linksupdate[j])
+            {
+                cnt++;
+            }
+        }
+    }
+    if(linksback.size() != 0)cout << (double)cnt/linksback.size() << endl;
+    cout << "forward size: " << links.size() << ", backward size: " << linksback.size() << ", update size: " << linksupdate.size() << endl;
 }
 
 int ConvolutionalLayer::getIn()
